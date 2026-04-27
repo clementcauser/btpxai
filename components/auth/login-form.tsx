@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { signIn } from "@/lib/auth-client"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 const loginSchema = z.object({
   email: z.string().email("Adresse email invalide"),
@@ -42,51 +44,53 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-sm font-medium text-zinc-700">
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor="email"
+          className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
+        >
           Email
         </label>
-        <input
+        <Input
           id="email"
           type="email"
           autoComplete="email"
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+          placeholder="vous@exemple.com"
           {...register("email")}
         />
         {errors.email && (
-          <p className="text-xs text-red-600">{errors.email.message}</p>
+          <p className="text-xs text-destructive">{errors.email.message}</p>
         )}
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="password" className="text-sm font-medium text-zinc-700">
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor="password"
+          className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
+        >
           Mot de passe
         </label>
-        <input
+        <Input
           id="password"
           type="password"
           autoComplete="current-password"
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+          placeholder="••••••••"
           {...register("password")}
         />
         {errors.password && (
-          <p className="text-xs text-red-600">{errors.password.message}</p>
+          <p className="text-xs text-destructive">{errors.password.message}</p>
         )}
       </div>
 
       {errors.root && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-sm bg-destructive/10 border border-destructive/30 px-3 py-2 text-sm text-destructive">
           {errors.root.message}
-        </p>
+        </div>
       )}
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="mt-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
-      >
-        {isSubmitting ? "Connexion..." : "Se connecter"}
-      </button>
+      <Button type="submit" disabled={isSubmitting} className="mt-1 w-full">
+        {isSubmitting ? "Connexion…" : "Se connecter"}
+      </Button>
     </form>
   )
 }

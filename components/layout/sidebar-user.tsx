@@ -1,0 +1,75 @@
+"use client"
+
+import { useState } from "react"
+import { LogOut } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { signOut } from "@/lib/auth-client"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+
+const roleLabels: Record<string, string> = {
+  admin: "Admin",
+  bureau: "Bureau",
+  ouvrier: "Terrain",
+}
+
+const roleColors: Record<string, string> = {
+  admin: "text-primary border-primary/40",
+  bureau: "text-sky-400 border-sky-400/40",
+  ouvrier: "text-emerald-400 border-emerald-400/40",
+}
+
+function initials(email: string): string {
+  return email.slice(0, 2).toUpperCase()
+}
+
+export function SidebarUser({
+  email,
+  role,
+}: {
+  email: string
+  role: string
+}) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+
+  async function handleSignOut() {
+    setLoading(true)
+    await signOut()
+    router.push("/login")
+  }
+
+  return (
+    <div className="border-t border-sidebar-border p-3">
+      <div className="flex items-center gap-3 px-1 mb-3">
+        <Avatar className="size-7 shrink-0">
+          <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
+            {initials(email)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-sidebar-foreground truncate">
+            {email}
+          </p>
+          <Badge
+            variant="outline"
+            className={`mt-0.5 text-[10px] px-1.5 py-0 h-4 ${roleColors[role] ?? ""}`}
+          >
+            {roleLabels[role] ?? role}
+          </Badge>
+        </div>
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full justify-start gap-2 text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/10 h-8 px-2 text-xs"
+        onClick={handleSignOut}
+        disabled={loading}
+      >
+        <LogOut className="size-3.5" />
+        {loading ? "Déconnexion…" : "Se déconnecter"}
+      </Button>
+    </div>
+  )
+}
