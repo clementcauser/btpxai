@@ -196,26 +196,38 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          notes: string | null
           project_id: string
+          reference: string | null
           sent_at: string | null
           status: Database["public"]["Enums"]["quote_status"]
           total_ht: number
+          tva_rate: number
+          validity_days: number
         }
         Insert: {
           created_at?: string
           id?: string
+          notes?: string | null
           project_id: string
+          reference?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           total_ht?: number
+          tva_rate?: number
+          validity_days?: number
         }
         Update: {
           created_at?: string
           id?: string
+          notes?: string | null
           project_id?: string
+          reference?: string | null
           sent_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           total_ht?: number
+          tva_rate?: number
+          validity_days?: number
         }
         Relationships: [
           {
