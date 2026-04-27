@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation"
 import { headers } from "next/headers"
 import { auth } from "@/lib/auth"
+import { AppSidebar } from "@/components/layout/sidebar"
+import { MobileHeader } from "@/components/layout/mobile-header"
+
+type Role = "admin" | "bureau" | "ouvrier"
 
 export default async function BureauLayout({
   children,
@@ -13,20 +17,28 @@ export default async function BureauLayout({
     redirect("/login")
   }
 
-  const role = (session.user as { role?: string }).role
+  const role = (session.user as { role?: Role }).role ?? "bureau"
+
   if (role !== "admin" && role !== "bureau") {
     redirect("/profil")
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white px-6 py-4 flex items-center justify-between">
-        <span className="font-semibold text-zinc-900">btpxai</span>
-        <p className="text-sm text-zinc-500">
-          {session.user.email} — {role}
-        </p>
-      </header>
-      <main className="p-6">{children}</main>
+    <div className="min-h-screen bg-background">
+      {/* Desktop sidebar */}
+      <div className="hidden lg:block">
+        <AppSidebar email={session.user.email} role={role} />
+      </div>
+
+      {/* Mobile header + drawer */}
+      <MobileHeader email={session.user.email} role={role} />
+
+      {/* Main content */}
+      <main className="lg:pl-56 min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-8">
+          {children}
+        </div>
+      </main>
     </div>
   )
 }
