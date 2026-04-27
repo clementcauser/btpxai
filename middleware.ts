@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-
-export const runtime = "nodejs"
+import { betterFetch } from "@better-fetch/fetch"
+import type { Session } from "@/lib/auth"
 
 const BUREAU_PATHS = ["/dashboard", "/devis", "/clients", "/inbox", "/parametres"]
 const TERRAIN_PATHS = ["/terrain"]
@@ -11,7 +10,12 @@ export async function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/api/auth")) return NextResponse.next()
 
-  const session = await auth.api.getSession({ headers: request.headers })
+  const { data: session } = await betterFetch<Session>("/api/auth/get-session", {
+    baseURL: request.nextUrl.origin,
+    headers: {
+      cookie: request.headers.get("cookie") ?? "",
+    },
+  })
 
   if (pathname === "/login") {
     return session
