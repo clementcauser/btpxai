@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:run
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://fake.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: fake-anon-key-for-ci-testing
+      SUPABASE_SERVICE_ROLE_KEY: fake-service-role-key-for-ci-testing
+      ANTHROPIC_API_KEY: sk-ant-fake-key-for-ci-testing
+      BETTER_AUTH_SECRET: fake-better-auth-secret-for-ci-testing-32
+      BETTER_AUTH_URL: http://localhost:3000
+      DATABASE_URL: postgresql://fake:fake@localhost:5432/fake
+      GOOGLE_CLIENT_ID: fake-client-id.apps.googleusercontent.com
+      GOOGLE_CLIENT_SECRET: fake-google-client-secret-for-ci
+      RESEND_API_KEY: re_fake_api_key_for_ci_testing
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+
+      - name: Run E2E tests
+        uses: cypress-io/github-action@v6
+        with:
+          install: false
+          start: npm run start
+          wait-on: http://localhost:3000
+          command: npm run test:e2e
