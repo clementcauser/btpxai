@@ -1,5 +1,14 @@
 import type { Tables, Enums } from "@/types/supabase"
 
+export type Client = Tables<"clients">
+
+export type CreateClientInput = {
+  name: string
+  email?: string | null
+  phone?: string | null
+  address?: string | null
+}
+
 export type QuoteStatus = Enums<"quote_status">
 
 export type Quote = Tables<"quotes">
