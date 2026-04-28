@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
-import { createClient } from "@/lib/supabase/server"
+import { supabaseService } from "@/lib/supabase/service"
 import { generateQuoteItems } from "@/lib/agents/devis"
 import { addQuoteItem } from "@/lib/quotes"
 
@@ -58,12 +58,11 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const supabase = await createClient()
   const insertedItems = []
 
   try {
     for (const item of generated.items) {
-      const inserted = await addQuoteItem(supabase, {
+      const inserted = await addQuoteItem(supabaseService, {
         quote_id,
         label: item.label,
         quantity: item.quantity,

@@ -1,29 +1,9 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import type { Database } from '@/types/supabase'
+import { supabaseService } from "@/lib/supabase/service"
 
+// Better-Auth handles authentication independently of Supabase Auth.
+// The cookie-based SSR client would always be anonymous here, so we delegate
+// to the service role client for all server-side operations.
+// Routes must be protected by Better-Auth middleware before reaching this client.
 export async function createClient() {
-  const cookieStore = await cookies()
-
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // Called from a Server Component — safe to ignore.
-            // Middleware handles session refresh.
-          }
-        },
-      },
-    }
-  )
+  return supabaseService
 }
