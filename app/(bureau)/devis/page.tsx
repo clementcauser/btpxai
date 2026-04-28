@@ -4,7 +4,7 @@ import { FileText, Plus } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getQuotesForTable } from "@/lib/quotes"
 import { QuotesTable } from "@/components/devis/quotes-table"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 
 export const metadata: Metadata = {
   title: "Devis — BTP×AI",
@@ -31,12 +31,10 @@ export default async function DevisPage() {
             {quotes.length} devis au total · suivi des statuts et actions rapides
           </p>
         </div>
-        <Button asChild>
-          <Link href="/devis/nouveau">
-            <Plus className="size-4" />
-            Nouveau devis
-          </Link>
-        </Button>
+        <Link href="/devis/nouveau" className={buttonVariants()}>
+          <Plus className="size-4" />
+          Nouveau devis
+        </Link>
       </div>
 
       <QuotesTable quotes={quotes} />
