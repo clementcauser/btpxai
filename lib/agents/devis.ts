@@ -2,6 +2,7 @@ import { generateObject } from "ai"
 import { anthropic } from "@ai-sdk/anthropic"
 import { z } from "zod"
 
+// Full schema with business validation — used for testing and post-generation validation.
 export const generatedQuoteItemSchema = z.object({
   label: z.string().min(1),
   quantity: z.number().positive(),
@@ -16,6 +17,20 @@ export const quoteGenerationOutputSchema = z.object({
 
 export type GeneratedQuoteItem = z.infer<typeof generatedQuoteItemSchema>
 export type QuoteGenerationOutput = z.infer<typeof quoteGenerationOutputSchema>
+
+// Stripped schema for Anthropic's output_config — numeric/string/array constraints
+// are not supported and cause a 400 error.
+const aiItemSchema = z.object({
+  label: z.string(),
+  quantity: z.number(),
+  unit: z.string(),
+  unit_price: z.number(),
+})
+
+const aiOutputSchema = z.object({
+  items: z.array(aiItemSchema),
+  notes: z.string(),
+})
 
 const SYSTEM_PROMPT = `Tu es un expert en métallerie et serrurerie industrielle. Tu aides une PME familiale française à générer des devis précis pour ses clients.
 
@@ -48,12 +63,13 @@ export async function generateQuoteItems(
 
   const { object } = await generateObject({
     model: anthropic("claude-sonnet-4-6"),
-    schema: quoteGenerationOutputSchema,
+    schema: aiOutputSchema,
     system: SYSTEM_PROMPT,
     prompt: brief,
     maxOutputTokens: 2048,
     abortSignal,
   })
 
-  return object
+  // Validate the AI output against the strict business schema before returning.
+  return quoteGenerationOutputSchema.parse(object)
 }
