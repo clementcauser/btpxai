@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useMemo, useTransition } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import {
   Search,
   X,
@@ -37,8 +36,6 @@ function clientInitials(name: string): string {
 type Props = { clients: Client[] }
 
 export function ClientsTable({ clients }: Props) {
-  const router = useRouter()
-  const [, startTransition] = useTransition()
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [createOpen, setCreateOpen] = useState(false)
