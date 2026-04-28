@@ -51,7 +51,7 @@ export async function generateQuoteItems(
     schema: quoteGenerationOutputSchema,
     system: SYSTEM_PROMPT,
     prompt: brief,
-    maxTokens: 2048,
+    maxOutputTokens: 2048,
     abortSignal,
   })
 
