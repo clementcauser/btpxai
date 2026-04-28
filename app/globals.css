@@ -114,3 +114,46 @@
     @apply font-sans;
   }
 }
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes forgePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 oklch(0.69 0.168 47 / 0.4);
+    border-color: oklch(0.69 0.168 47 / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 12px oklch(0.69 0.168 47 / 0);
+    border-color: oklch(0.69 0.168 47 / 0.9);
+  }
+}
+
+@keyframes forgeBar {
+  0% { width: 0%; }
+  15% { width: 22%; }
+  35% { width: 48%; }
+  60% { width: 71%; }
+  80% { width: 88%; }
+  100% { width: 95%; }
+}
+
+@keyframes zapFlicker {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  25% { opacity: 0.6; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.08); }
+  75% { opacity: 0.8; transform: scale(0.96); }
+}
+
+@keyframes sparkOrbit {
+  from { transform: rotate(var(--spark-start)) translateX(36px); }
+  to   { transform: rotate(var(--spark-end)) translateX(36px); }
+}
