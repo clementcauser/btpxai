@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, fireEvent } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import type { ComponentProps, ReactNode } from "react"
 import { QuoteRequestForm } from "@/components/devis/quote-request-form"
@@ -64,7 +64,7 @@ vi.mock("@/components/ui/input", () => ({
 
 const mockClients: Client[] = [
   {
-    id: "00000000-0000-0000-0000-000000000001",
+    id: "00000000-0000-4000-8000-000000000001",
     name: "Dupont SA",
     email: "dupont@example.com",
     phone: "06 00 00 00 00",
@@ -146,10 +146,9 @@ describe("QuoteRequestForm", () => {
     const user = userEvent.setup()
     render(<QuoteRequestForm clients={mockClients} />)
 
-    await user.selectOptions(
-      screen.getByLabelText("Client *"),
-      "00000000-0000-0000-0000-000000000001"
-    )
+    fireEvent.change(screen.getByLabelText("Client *"), {
+      target: { value: "00000000-0000-4000-8000-000000000001" },
+    })
     await user.type(
       screen.getByLabelText("Description des travaux *"),
       "Installation d'un portail coulissant en aluminium pour un garage individuel"
@@ -179,10 +178,9 @@ describe("QuoteRequestForm", () => {
     const user = userEvent.setup()
     render(<QuoteRequestForm clients={mockClients} />)
 
-    await user.selectOptions(
-      screen.getByLabelText("Client *"),
-      "00000000-0000-0000-0000-000000000001"
-    )
+    fireEvent.change(screen.getByLabelText("Client *"), {
+      target: { value: "00000000-0000-4000-8000-000000000001" },
+    })
     await user.type(
       screen.getByLabelText("Description des travaux *"),
       "Installation d'un portail coulissant en aluminium pour un garage individuel"
