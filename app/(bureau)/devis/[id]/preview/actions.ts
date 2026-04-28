@@ -76,22 +76,3 @@ export async function saveQuoteAction(
   }
 }
 
-export async function sendQuoteAction(
-  quoteId: string
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const supabase = await createClient()
-    await updateQuote(supabase, quoteId, {
-      status: "sent",
-      sent_at: new Date().toISOString(),
-    })
-    revalidatePath(`/devis/${quoteId}/preview`)
-    return { success: true }
-  } catch (err) {
-    console.error("[sendQuoteAction]", err)
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : "Erreur inconnue",
-    }
-  }
-}
