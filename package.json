@@ -12,7 +12,13 @@
     "test:run": "vitest run",
     "test:e2e": "cypress run",
     "test:e2e:open": "cypress open",
-    "test:ci": "vitest run && start-server-and-test 'next dev' http://localhost:3000 'cypress run'"
+    "test:ci": "vitest run && start-server-and-test 'next dev' http://localhost:3000 'cypress run'",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:status": "supabase status",
+    "db:types": "supabase gen types typescript --local > types/supabase.ts",
+    "db:diff": "supabase db diff"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.71",
