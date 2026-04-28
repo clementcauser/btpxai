@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
-import { createClient } from "@/lib/supabase/server"
+import { supabaseService } from "@/lib/supabase/service"
 
 const briefSchema = z.object({
   client_id: z.string().uuid("Client invalide"),
@@ -38,8 +38,6 @@ export async function POST(req: NextRequest) {
   const { client_id, travaux_description, materials, delai, notes_internes } =
     parsed.data
 
-  const supabase = await createClient()
-
   let projectDescription = travaux_description
   if (materials?.trim()) {
     projectDescription += `\n\nMatériaux évoqués : ${materials.trim()}`
@@ -52,7 +50,7 @@ export async function POST(req: NextRequest) {
     year: "numeric",
   })
 
-  const { data: project, error: projectError } = await supabase
+  const { data: project, error: projectError } = await supabaseService
     .from("projects")
     .insert({
       client_id,
@@ -70,7 +68,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { data: quote, error: quoteError } = await supabase
+  const { data: quote, error: quoteError } = await supabaseService
     .from("quotes")
     .insert({
       project_id: project.id,

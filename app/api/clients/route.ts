@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
-import { createClient as createSupabaseClient } from "@/lib/supabase/server"
+import { supabaseService } from "@/lib/supabase/service"
 
 const createClientSchema = z.object({
   name: z.string().min(2, "Nom requis (2 caractères minimum)"),
@@ -33,9 +33,8 @@ export async function POST(req: NextRequest) {
   }
 
   const { name, email, phone, address } = parsed.data
-  const supabase = await createSupabaseClient()
 
-  const { data: client, error } = await supabase
+  const { data: client, error } = await supabaseService
     .from("clients")
     .insert({
       name,
