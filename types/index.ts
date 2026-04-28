@@ -24,6 +24,10 @@ export type QuoteWithContext = QuoteWithItems & {
   }
 }
 
+export type QuoteForTable = Quote & {
+  project: (Project & { client: Pick<Client, "id" | "name"> }) | null
+}
+
 export type CreateQuoteInput = {
   project_id: string
   tva_rate?: number

@@ -5,6 +5,7 @@ import type {
   QuoteItem,
   QuoteWithItems,
   QuoteWithContext,
+  QuoteForTable,
   CreateQuoteInput,
   UpdateQuoteInput,
   CreateQuoteItemInput,
@@ -21,6 +22,55 @@ export async function getQuotes(supabase: Supabase): Promise<Quote[]> {
 
   if (error) throw error
   return data
+}
+
+export async function getQuotesForTable(
+  supabase: Supabase
+): Promise<QuoteForTable[]> {
+  const { data, error } = await supabase
+    .from("quotes")
+    .select("*, project:projects(id, title, client:clients(id, name))")
+    .order("created_at", { ascending: false })
+
+  if (error) throw error
+  return data as unknown as QuoteForTable[]
+}
+
+export async function duplicateQuote(
+  supabase: Supabase,
+  id: string
+): Promise<Quote> {
+  const original = await getQuote(supabase, id)
+
+  const newQuote = await createQuote(supabase, {
+    project_id: original.project_id,
+    tva_rate: original.tva_rate,
+    notes: original.notes,
+    validity_days: original.validity_days,
+  })
+
+  if (original.items.length > 0) {
+    const { error } = await supabase.from("quote_items").insert(
+      original.items.map((item) => ({
+        quote_id: newQuote.id,
+        label: item.label,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        unit: item.unit,
+      }))
+    )
+    if (error) throw error
+  }
+
+  const total_ht =
+    Math.round(
+      original.items.reduce(
+        (sum, item) => sum + item.quantity * item.unit_price,
+        0
+      ) * 100
+    ) / 100
+
+  return await updateQuote(supabase, newQuote.id, { total_ht })
 }
 
 export async function getQuote(
