@@ -1,6 +1,7 @@
 import type { Tables, Enums } from "@/types/supabase"
 
 export type Client = Tables<"clients">
+export type Project = Tables<"projects">
 
 export type CreateClientInput = {
   name: string
@@ -16,6 +17,12 @@ export type Quote = Tables<"quotes">
 export type QuoteItem = Tables<"quote_items">
 
 export type QuoteWithItems = Quote & { items: QuoteItem[] }
+
+export type QuoteWithContext = QuoteWithItems & {
+  project: Project & {
+    client: Client
+  }
+}
 
 export type CreateQuoteInput = {
   project_id: string

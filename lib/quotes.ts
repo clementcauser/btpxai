@@ -4,6 +4,7 @@ import type {
   Quote,
   QuoteItem,
   QuoteWithItems,
+  QuoteWithContext,
   CreateQuoteInput,
   UpdateQuoteInput,
   CreateQuoteItemInput,
@@ -34,6 +35,20 @@ export async function getQuote(
 
   if (error) throw error
   return data as QuoteWithItems
+}
+
+export async function getQuoteWithContext(
+  supabase: Supabase,
+  id: string
+): Promise<QuoteWithContext> {
+  const { data, error } = await supabase
+    .from("quotes")
+    .select("*, items:quote_items(*), project:projects(*, client:clients(*))")
+    .eq("id", id)
+    .single()
+
+  if (error) throw error
+  return data as unknown as QuoteWithContext
 }
 
 export async function createQuote(

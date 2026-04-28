@@ -109,6 +109,7 @@ export function QuoteEditor({ quote }: QuoteEditorProps) {
   const [isSending, setIsSending] = useState(false)
   const [sendDialogOpen, setSendDialogOpen] = useState(false)
   const [status, setStatus] = useState<QuoteStatus>(quote.status)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   // ─── Derived totals (real-time) ───────────────────────────────────────────
 
@@ -214,6 +215,33 @@ export function QuoteEditor({ quote }: QuoteEditorProps) {
       }
     } finally {
       setIsSending(false)
+    }
+  }
+
+  // ─── Download PDF ─────────────────────────────────────────────────────────
+
+  const handleDownloadPdf = async () => {
+    setIsDownloading(true)
+    try {
+      const res = await fetch(`/api/devis/${quote.id}/pdf`)
+      if (!res.ok) {
+        toast.error("Erreur lors de la génération du PDF")
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      const ref =
+        quote.reference ?? `DEV-${quote.id.slice(0, 8).toUpperCase()}`
+      a.href = url
+      a.download = `${ref}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success("PDF téléchargé")
+    } catch {
+      toast.error("Erreur lors du téléchargement")
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -576,10 +604,15 @@ export function QuoteEditor({ quote }: QuoteEditorProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => toast.info("Génération PDF bientôt disponible")}
+            onClick={handleDownloadPdf}
+            disabled={isDownloading}
             className="gap-1.5"
           >
-            <Download className="size-3.5" />
+            {isDownloading ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Download className="size-3.5" />
+            )}
             PDF
           </Button>
           <Button
