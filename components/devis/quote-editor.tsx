@@ -23,11 +23,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import type { QuoteWithItems, QuoteStatus } from "@/types"
-import {
-  saveQuoteAction,
-  sendQuoteAction,
-} from "@/app/(bureau)/devis/[id]/preview/actions"
+import type { QuoteWithContext, QuoteStatus } from "@/types"
+import { saveQuoteAction } from "@/app/(bureau)/devis/[id]/preview/actions"
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -86,7 +83,7 @@ function newTempId() {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface QuoteEditorProps {
-  quote: QuoteWithItems
+  quote: QuoteWithContext
 }
 
 export function QuoteEditor({ quote }: QuoteEditorProps) {
@@ -204,15 +201,18 @@ export function QuoteEditor({ quote }: QuoteEditorProps) {
         toast.error(saveResult.error ?? "Erreur lors de la sauvegarde")
         return
       }
-      const sendResult = await sendQuoteAction(quote.id)
-      if (sendResult.success) {
+      const res = await fetch(`/api/devis/${quote.id}/send`, { method: "POST" })
+      const data = await res.json()
+      if (res.ok) {
         setStatus("sent")
         setDeletedItemIds([])
         setIsDirty(false)
-        toast.success("Devis envoyé")
+        toast.success("Devis envoyé par email au client")
       } else {
-        toast.error(sendResult.error ?? "Erreur lors de l'envoi")
+        toast.error(data.error ?? "Erreur lors de l'envoi")
       }
+    } catch {
+      toast.error("Erreur lors de l'envoi")
     } finally {
       setIsSending(false)
     }
@@ -652,9 +652,17 @@ export function QuoteEditor({ quote }: QuoteEditorProps) {
             <DialogTitle>Envoyer le devis ?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Le devis sera sauvegardé et marqué comme envoyé. Le statut passera
-            à <strong className="text-foreground">Envoyé</strong> et ne pourra
-            plus être modifié.
+            Le devis sera sauvegardé et envoyé par email{" "}
+            {quote.project.client.email ? (
+              <>
+                à{" "}
+                <strong className="text-foreground">
+                  {quote.project.client.email}
+                </strong>{" "}
+              </>
+            ) : null}
+            avec le PDF en pièce jointe. Le statut passera à{" "}
+            <strong className="text-foreground">Envoyé</strong>.
           </p>
           <DialogFooter>
             <Button

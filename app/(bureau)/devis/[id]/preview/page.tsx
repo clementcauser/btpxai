@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, FileText } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
-import { getQuote } from "@/lib/quotes"
+import { getQuoteWithContext } from "@/lib/quotes"
 import { QuoteEditor } from "@/components/devis/quote-editor"
 
 export async function generateMetadata({
@@ -27,7 +27,7 @@ export default async function QuotePreviewPage({
 
   let quote
   try {
-    quote = await getQuote(supabase, id)
+    quote = await getQuoteWithContext(supabase, id)
   } catch {
     notFound()
   }
