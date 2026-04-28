@@ -3,12 +3,32 @@ import type { Tables, Enums } from "@/types/supabase"
 export type Client = Tables<"clients">
 export type Project = Tables<"projects">
 
+export type ClientWithQuotes = Client & {
+  projects: Array<
+    Project & {
+      quotes: Array<
+        Pick<
+          Tables<"quotes">,
+          "id" | "reference" | "status" | "total_ht" | "tva_rate" | "created_at" | "sent_at"
+        >
+      >
+    }
+  >
+}
+
 export type CreateClientInput = {
   name: string
   email?: string | null
   phone?: string | null
   address?: string | null
 }
+
+export type UpdateClientInput = Partial<{
+  name: string
+  email: string | null
+  phone: string | null
+  address: string | null
+}>
 
 export type QuoteStatus = Enums<"quote_status">
 
