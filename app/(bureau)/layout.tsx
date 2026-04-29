@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation"
-import { headers } from "next/headers"
-import { auth } from "@/lib/auth"
+import { getUser, getUserRole } from "@/lib/supabase/server"
 import { AppSidebar } from "@/components/layout/sidebar"
 import { MobileHeader } from "@/components/layout/mobile-header"
 
@@ -11,13 +10,13 @@ export default async function BureauLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth.api.getSession({ headers: await headers() })
+  const user = await getUser()
 
-  if (!session) {
+  if (!user) {
     redirect("/login")
   }
 
-  const role = (session.user as { role?: Role }).role ?? "bureau"
+  const role = (getUserRole(user) as Role) ?? "bureau"
 
   if (role !== "admin" && role !== "bureau") {
     redirect("/profil")
@@ -27,11 +26,11 @@ export default async function BureauLayout({
     <div className="min-h-screen bg-background">
       {/* Desktop sidebar */}
       <div className="hidden lg:block">
-        <AppSidebar email={session.user.email} role={role} />
+        <AppSidebar email={user.email!} role={role} />
       </div>
 
       {/* Mobile header + drawer */}
-      <MobileHeader email={session.user.email} role={role} />
+      <MobileHeader email={user.email!} role={role} />
 
       {/* Main content */}
       <main className="lg:pl-56 min-h-screen">

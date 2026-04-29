@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { headers } from "next/headers"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { getUser } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
 import { generateQuoteItems } from "@/lib/agents/devis"
 import { addQuoteItem } from "@/lib/quotes"
@@ -15,8 +14,8 @@ const generateSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) {
+  const user = await getUser()
+  if (!user) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
   }
 

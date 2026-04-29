@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { headers } from "next/headers"
-import { auth } from "@/lib/auth"
+import { getUser } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
 import { env } from "@/lib/env"
 
 export async function GET(req: NextRequest) {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) {
+  const user = await getUser()
+  if (!user) {
     return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/login`)
   }
 

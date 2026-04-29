@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { headers } from "next/headers"
 import { z } from "zod"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { updateQuote } from "@/lib/quotes"
-import { auth } from "@/lib/auth"
 
 const schema = z.object({
   status: z.enum(["draft", "sent", "accepted", "rejected", "expired"]),
@@ -15,8 +13,8 @@ export async function PATCH(
 ) {
   const { id } = await params
 
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) {
+  const user = await getUser()
+  if (!user) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
   }
 

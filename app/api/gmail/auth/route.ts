@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { headers } from "next/headers"
-import { auth } from "@/lib/auth"
+import { getUser, getUserRole } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
 import { env } from "@/lib/env"
 
@@ -10,16 +9,15 @@ const SCOPES = [
   "https://www.googleapis.com/auth/gmail.modify",
 ].join(" ")
 
-function requireBureauOrAdmin(role?: string) {
+function requireBureauOrAdmin(role?: string | null) {
   return role === "admin" || role === "bureau"
 }
 
 export async function GET(_req: NextRequest) {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  const user = await getUser()
+  if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
 
-  const role = (session.user as { role?: string }).role
-  if (!requireBureauOrAdmin(role)) {
+  if (!requireBureauOrAdmin(getUserRole(user))) {
     return NextResponse.json({ error: "Accès refusé" }, { status: 403 })
   }
 
@@ -49,11 +47,10 @@ export async function GET(_req: NextRequest) {
 }
 
 export async function DELETE(_req: NextRequest) {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  const user = await getUser()
+  if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
 
-  const role = (session.user as { role?: string }).role
-  if (!requireBureauOrAdmin(role)) {
+  if (!requireBureauOrAdmin(getUserRole(user))) {
     return NextResponse.json({ error: "Accès refusé" }, { status: 403 })
   }
 

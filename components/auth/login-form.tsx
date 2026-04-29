@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { signIn } from "@/lib/auth-client"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -28,12 +28,13 @@ export function LoginForm() {
   })
 
   async function onSubmit(values: LoginFormValues) {
-    const result = await signIn.email({
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithPassword({
       email: values.email,
       password: values.password,
     })
 
-    if (result.error) {
+    if (error) {
       setError("root", { message: "Email ou mot de passe incorrect" })
       return
     }

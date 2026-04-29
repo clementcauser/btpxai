@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
-import { headers } from "next/headers"
-import { auth } from "@/lib/auth"
+import { getUser, getUserRole } from "@/lib/supabase/server"
 import {
   FileText,
   Users,
@@ -76,8 +75,8 @@ const quickActions = [
 ]
 
 export default async function DashboardPage() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  const role = (session?.user as { role?: string })?.role ?? "bureau"
+  const user = await getUser()
+  const role = getUserRole(user) ?? "bureau"
 
   const greeting = (() => {
     const hour = new Date().getHours()

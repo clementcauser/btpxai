@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { headers } from "next/headers"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { duplicateQuote } from "@/lib/quotes"
-import { auth } from "@/lib/auth"
 
 export async function POST(
   _req: NextRequest,
@@ -10,8 +8,8 @@ export async function POST(
 ) {
   const { id } = await params
 
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) {
+  const user = await getUser()
+  if (!user) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
   }
 

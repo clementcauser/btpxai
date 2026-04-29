@@ -20,7 +20,7 @@ Système agentique pour une petite entreprise de métallerie familiale. L'object
 | Framework        | Next.js 15 (App Router)         |
 | Langage          | TypeScript (strict mode)        |
 | Base de données  | Supabase (Postgres managé)      |
-| Auth             | Better-Auth                     |
+| Auth             | Supabase Auth                   |
 | UI               | Shadcn/ui + Tailwind CSS        |
 | IA               | Anthropic API via Vercel AI SDK |
 | Tests unitaires  | Vitest + Testing Library        |
@@ -106,7 +106,7 @@ materiaux_requests -- id, project_id, user_id, label, quantity, urgency, status,
 
 ---
 
-## Authentification (Better-Auth)
+## Authentification (Supabase Auth)
 
 ### Rôles
 
@@ -114,10 +114,13 @@ materiaux_requests -- id, project_id, user_id, label, quantity, urgency, status,
 - `bureau` — devis, clients, inbox, dashboard
 - `ouvrier` — interface terrain uniquement
 
+Le rôle est stocké dans `user.user_metadata.role`. Pour l'assigner, utiliser le dashboard Supabase ou le service role client : `supabaseService.auth.admin.updateUserById(id, { user_metadata: { role: 'bureau' } })`.
+
 ### Règles
 
-- Le middleware Next.js protège les routes par rôle
-- Utiliser le hook `useSession()` côté client pour accéder à la session
+- Le middleware Next.js protège les routes par rôle via `supabase.auth.getUser()`
+- Côté server : `getUser()` et `getUserRole()` depuis `lib/supabase/server.ts`
+- Côté client : `createClient()` depuis `lib/supabase/client.ts` puis `supabase.auth.signInWithPassword()` / `signOut()`
 - Ne jamais exposer le `SERVICE_ROLE_KEY` côté client
 
 ---
@@ -227,10 +230,6 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 # Anthropic
 ANTHROPIC_API_KEY=
-
-# Better-Auth
-BETTER_AUTH_SECRET=
-BETTER_AUTH_URL=
 
 # Google (Gmail + Sheets)
 GOOGLE_CLIENT_ID=

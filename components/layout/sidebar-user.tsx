@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { signOut } from "@/lib/auth-client"
+import { createClient } from "@/lib/supabase/client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -36,7 +36,8 @@ export function SidebarUser({
 
   async function handleSignOut() {
     setLoading(true)
-    await signOut()
+    const supabase = createClient()
+    await supabase.auth.signOut()
     router.push("/login")
   }
 

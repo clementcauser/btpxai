@@ -1,9 +1,18 @@
-import { createAuthClient } from "better-auth/react"
-import { adminClient } from "better-auth/client/plugins"
+import { createClient } from "@/lib/supabase/client"
 
-export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL ?? "",
-  plugins: [adminClient()],
-})
+const supabase = createClient()
 
-export const { useSession, signIn, signOut } = authClient
+export const signIn = {
+  email: async ({ email, password }: { email: string; password: string }) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    return { data, error }
+  },
+}
+
+export async function signOut() {
+  await supabase.auth.signOut()
+}
+
+export function useSession() {
+  return supabase.auth.getSession()
+}
