@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -67,7 +62,7 @@ export type Database = {
           refreshToken?: string | null
           refreshTokenExpiresAt?: string | null
           scope?: string | null
-          updatedAt: string
+          updatedAt?: string
           userId: string
         }
         Update: {
@@ -119,6 +114,36 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+        }
+        Relationships: []
+      }
+      gmail_connections: {
+        Row: {
+          access_token: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          refresh_token: string
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          refresh_token: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          refresh_token?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -258,7 +283,7 @@ export type Database = {
           impersonatedBy?: string | null
           ipAddress?: string | null
           token: string
-          updatedAt: string
+          updatedAt?: string
           userAgent?: string | null
           userId: string
         }
@@ -345,7 +370,7 @@ export type Database = {
           banReason?: string | null
           createdAt?: string
           email: string
-          emailVerified: boolean
+          emailVerified?: boolean
           id: string
           image?: string | null
           name: string
@@ -369,27 +394,27 @@ export type Database = {
       }
       verification: {
         Row: {
-          createdAt: string
+          createdAt: string | null
           expiresAt: string
           id: string
           identifier: string
-          updatedAt: string
+          updatedAt: string | null
           value: string
         }
         Insert: {
-          createdAt?: string
+          createdAt?: string | null
           expiresAt: string
           id: string
           identifier: string
-          updatedAt?: string
+          updatedAt?: string | null
           value: string
         }
         Update: {
-          createdAt?: string
+          createdAt?: string | null
           expiresAt?: string
           id?: string
           identifier?: string
-          updatedAt?: string
+          updatedAt?: string | null
           value?: string
         }
         Relationships: []
@@ -541,3 +566,4 @@ export const Constants = {
     },
   },
 } as const
+

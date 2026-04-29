@@ -80,3 +80,27 @@ export type UpdateQuoteItemInput = Partial<{
   unit_price: number
   unit: string | null
 }>
+
+export type GmailConnection = {
+  id: string
+  email: string
+  access_token: string
+  refresh_token: string
+  expires_at: string
+  created_at: string
+  updated_at: string
+}
+
+export type EmailSummary = {
+  id: string
+  threadId: string
+  subject: string
+  from: string
+  date: string
+  snippet: string
+  isRead: boolean
+}
+
+export type EmailDetail = EmailSummary & {
+  body: string
+}
