@@ -135,3 +135,18 @@ export type EmailSummary = {
 export type EmailDetail = EmailSummary & {
   body: string
 }
+
+export type EmailAcknowledgment = {
+  id: string
+  message_id: string
+  thread_id: string
+  sender_email: string
+  client_name: string | null
+  sent_at: string
+}
+
+export type AppSetting = {
+  key: string
+  value: string
+  updated_at: string
+}
