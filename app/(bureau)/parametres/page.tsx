@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import { Settings } from "lucide-react"
 import { supabaseService } from "@/lib/supabase/service"
 import { GmailConnectionSection } from "@/components/parametres/gmail-connection-section"
+import { AutoAcknowledgmentSection } from "@/components/parametres/auto-acknowledgment-section"
+import { getAutoAcknowledgmentEnabled } from "@/lib/acknowledgments"
 
 export const metadata: Metadata = {
   title: "Paramètres — BTP×AI",
@@ -16,11 +18,10 @@ export default async function ParametresPage({
 }) {
   const { gmail } = await searchParams
 
-  const { data: connection } = await supabaseService
-    .from("gmail_connections")
-    .select("email, created_at")
-    .limit(1)
-    .single()
+  const [{ data: connection }, autoAckEnabled] = await Promise.all([
+    supabaseService.from("gmail_connections").select("email, created_at").limit(1).single(),
+    getAutoAcknowledgmentEnabled(),
+  ])
 
   return (
     <div className="space-y-6">
@@ -44,6 +45,13 @@ export default async function ParametresPage({
           Intégrations
         </h2>
         <GmailConnectionSection connection={connection} gmailParam={gmail} />
+      </div>
+
+      <div className="max-w-2xl space-y-4">
+        <h2 className="text-sm font-medium text-muted-foreground tracking-wider uppercase">
+          Automatisations
+        </h2>
+        <AutoAcknowledgmentSection initialEnabled={autoAckEnabled} />
       </div>
     </div>
   )
