@@ -146,3 +146,37 @@ export async function getEmail(id: string): Promise<EmailDetail> {
     body: extractBody(msg.payload),
   }
 }
+
+export async function sendEmail(
+  to: string,
+  subject: string,
+  body: string,
+  replyToMessageId?: string
+): Promise<void> {
+  const token = await getValidAccessToken()
+
+  const lines = [
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    "MIME-Version: 1.0",
+    "Content-Type: text/plain; charset=utf-8",
+  ]
+  if (replyToMessageId) {
+    lines.push(`In-Reply-To: ${replyToMessageId}`)
+    lines.push(`References: ${replyToMessageId}`)
+  }
+  lines.push("", body)
+
+  const raw = Buffer.from(lines.join("\r\n")).toString("base64url")
+
+  const res = await fetch(`${GMAIL_API}/messages/send`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ raw }),
+  })
+
+  if (!res.ok) throw new Error("Erreur Gmail API (sendEmail)")
+}

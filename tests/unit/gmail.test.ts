@@ -12,7 +12,7 @@ const mockFetch = vi.fn()
 vi.stubGlobal("fetch", mockFetch)
 
 import { supabaseService } from "@/lib/supabase/service"
-import { getValidAccessToken, listEmails, getEmail } from "@/lib/gmail"
+import { getValidAccessToken, listEmails, getEmail, sendEmail } from "@/lib/gmail"
 
 const mockSupabase = supabaseService as {
   from: ReturnType<typeof vi.fn>
@@ -236,5 +236,43 @@ describe("getEmail", () => {
     const email = await getEmail("msg-2")
     expect(email.body).toBe("<p>HTML</p>")
     expect(email.isRead).toBe(false)
+  })
+})
+
+describe("sendEmail", () => {
+  it("envoie un email via Gmail API avec encodage base64url", async () => {
+    mockValidToken()
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ id: "sent-1" }) })
+
+    await sendEmail("client@example.com", "Votre devis", "Bonjour,\n\nVeuillez trouver...")
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer valid-token",
+          "Content-Type": "application/json",
+        }),
+      })
+    )
+
+    const callBody = JSON.parse(mockFetch.mock.calls[0][1].body as string)
+    const decoded = Buffer.from(callBody.raw, "base64url").toString("utf-8")
+    expect(decoded).toContain("To: client@example.com")
+    expect(decoded).toContain("Subject: Votre devis")
+    expect(decoded).toContain("Bonjour,")
+  })
+
+  it("inclut In-Reply-To quand replyToMessageId est fourni", async () => {
+    mockValidToken()
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ id: "sent-2" }) })
+
+    await sendEmail("a@b.com", "Re: Test", "Réponse", "original-msg-id")
+
+    const callBody = JSON.parse(mockFetch.mock.calls[0][1].body as string)
+    const decoded = Buffer.from(callBody.raw, "base64url").toString("utf-8")
+    expect(decoded).toContain("In-Reply-To: original-msg-id")
+    expect(decoded).toContain("References: original-msg-id")
   })
 })
