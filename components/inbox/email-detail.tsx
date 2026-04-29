@@ -94,7 +94,7 @@ export function EmailDetail({ messageId }: Props) {
         {email.body.startsWith("<") ? (
           <iframe
             srcDoc={email.body}
-            sandbox="allow-same-origin"
+            sandbox=""
             className="w-full min-h-[400px] border-0"
             title="Contenu de l'email"
           />

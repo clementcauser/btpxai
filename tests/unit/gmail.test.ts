@@ -14,7 +14,7 @@ vi.stubGlobal("fetch", mockFetch)
 import { supabaseService } from "@/lib/supabase/service"
 import { getValidAccessToken, listEmails, getEmail, sendEmail, markAsRead } from "@/lib/gmail"
 
-const mockSupabase = supabaseService as {
+const mockSupabase = supabaseService as unknown as {
   from: ReturnType<typeof vi.fn>
 }
 

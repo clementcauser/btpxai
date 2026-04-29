@@ -23,6 +23,7 @@ export async function GET(_req: NextRequest) {
     return NextResponse.json({ error: "Accès refusé" }, { status: 403 })
   }
 
+  const state = crypto.randomUUID()
   const redirectUri = `${env.NEXT_PUBLIC_APP_URL}/api/gmail/callback`
   const params = new URLSearchParams({
     client_id: env.GOOGLE_CLIENT_ID,
@@ -31,11 +32,20 @@ export async function GET(_req: NextRequest) {
     scope: SCOPES,
     access_type: "offline",
     prompt: "consent",
+    state,
   })
 
-  return NextResponse.redirect(
+  const response = NextResponse.redirect(
     `https://accounts.google.com/o/oauth2/v2/auth?${params}`
   )
+  response.cookies.set("gmail_oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 600,
+    path: "/",
+  })
+  return response
 }
 
 export async function DELETE(_req: NextRequest) {

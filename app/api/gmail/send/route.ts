@@ -15,6 +15,11 @@ export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
 
+  const role = (session.user as { role?: string }).role
+  if (role !== "admin" && role !== "bureau") {
+    return NextResponse.json({ error: "Accès refusé" }, { status: 403 })
+  }
+
   let body: unknown
   try {
     body = await req.json()

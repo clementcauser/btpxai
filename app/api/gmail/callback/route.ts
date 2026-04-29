@@ -19,6 +19,15 @@ export async function GET(req: NextRequest) {
     )
   }
 
+  const state = req.nextUrl.searchParams.get("state")
+  const expectedState = req.cookies.get("gmail_oauth_state")?.value
+
+  if (!state || !expectedState || state !== expectedState) {
+    return NextResponse.redirect(
+      `${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error`
+    )
+  }
+
   const redirectUri = `${env.NEXT_PUBLIC_APP_URL}/api/gmail/callback`
 
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
@@ -43,6 +52,12 @@ export async function GET(req: NextRequest) {
     access_token: string
     refresh_token: string
     expires_in: number
+  }
+
+  if (!tokens.refresh_token) {
+    return NextResponse.redirect(
+      `${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error`
+    )
   }
 
   const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -71,7 +86,9 @@ export async function GET(req: NextRequest) {
     updated_at: now,
   })
 
-  return NextResponse.redirect(
+  const finalResponse = NextResponse.redirect(
     `${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=connected`
   )
+  finalResponse.cookies.delete("gmail_oauth_state")
+  return finalResponse
 }
