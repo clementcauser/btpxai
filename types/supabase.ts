@@ -90,6 +90,33 @@ export type Database = {
           },
         ]
       }
+      email_acknowledgments: {
+        Row: {
+          id: string
+          message_id: string
+          thread_id: string
+          sender_email: string
+          client_name: string | null
+          sent_at: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          thread_id: string
+          sender_email: string
+          client_name?: string | null
+          sent_at?: string
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          thread_id?: string
+          sender_email?: string
+          client_name?: string | null
+          sent_at?: string
+        }
+        Relationships: []
+      }
       email_statuses: {
         Row: {
           id: string
@@ -127,6 +154,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      app_settings: {
+        Row: {
+          key: string
+          value: string
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          value: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          value?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       clients: {
         Row: {
