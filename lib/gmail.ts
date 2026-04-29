@@ -96,3 +96,53 @@ export async function listEmails(
 
   return messages
 }
+
+type GmailPart = {
+  mimeType: string
+  body?: { data?: string }
+  parts?: GmailPart[]
+}
+
+function extractBody(part: GmailPart): string {
+  if (part.mimeType === "text/html" && part.body?.data) {
+    return Buffer.from(part.body.data, "base64url").toString("utf-8")
+  }
+  if (part.parts) {
+    const html = part.parts.find((p) => p.mimeType === "text/html")
+    if (html?.body?.data) return Buffer.from(html.body.data, "base64url").toString("utf-8")
+    const plain = part.parts.find((p) => p.mimeType === "text/plain")
+    if (plain?.body?.data) return Buffer.from(plain.body.data, "base64url").toString("utf-8")
+  }
+  if (part.mimeType === "text/plain" && part.body?.data) {
+    return Buffer.from(part.body.data, "base64url").toString("utf-8")
+  }
+  return ""
+}
+
+export async function getEmail(id: string): Promise<EmailDetail> {
+  const token = await getValidAccessToken()
+
+  const res = await fetch(`${GMAIL_API}/messages/${id}?format=full`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error(`Erreur Gmail API (getEmail ${id})`)
+
+  const msg = (await res.json()) as {
+    id: string
+    threadId: string
+    labelIds: string[]
+    snippet: string
+    payload: GmailPart & { headers: { name: string; value: string }[] }
+  }
+
+  return {
+    id: msg.id,
+    threadId: msg.threadId,
+    subject: getHeader(msg.payload.headers, "Subject"),
+    from: getHeader(msg.payload.headers, "From"),
+    date: getHeader(msg.payload.headers, "Date"),
+    snippet: msg.snippet,
+    isRead: !msg.labelIds.includes("UNREAD"),
+    body: extractBody(msg.payload),
+  }
+}

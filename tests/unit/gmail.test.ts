@@ -12,7 +12,7 @@ const mockFetch = vi.fn()
 vi.stubGlobal("fetch", mockFetch)
 
 import { supabaseService } from "@/lib/supabase/service"
-import { getValidAccessToken, listEmails } from "@/lib/gmail"
+import { getValidAccessToken, listEmails, getEmail } from "@/lib/gmail"
 
 const mockSupabase = supabaseService as {
   from: ReturnType<typeof vi.fn>
@@ -168,5 +168,73 @@ describe("listEmails", () => {
 
     const emails = await listEmails()
     expect(emails).toEqual([])
+  })
+})
+
+describe("getEmail", () => {
+  it("retourne un EmailDetail avec body texte brut", async () => {
+    mockValidToken()
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        id: "msg-1",
+        threadId: "thread-1",
+        labelIds: ["INBOX"],
+        snippet: "Bonjour...",
+        payload: {
+          mimeType: "text/plain",
+          headers: [
+            { name: "Subject", value: "Test" },
+            { name: "From", value: "jean@example.com" },
+            { name: "Date", value: "Mon, 28 Apr 2026 10:00:00 +0200" },
+          ],
+          body: {
+            data: Buffer.from("Corps du message").toString("base64url"),
+          },
+        },
+      }),
+    })
+
+    const email = await getEmail("msg-1")
+    expect(email.id).toBe("msg-1")
+    expect(email.body).toBe("Corps du message")
+    expect(email.isRead).toBe(true)
+  })
+
+  it("retourne le body HTML depuis un message multipart", async () => {
+    mockValidToken()
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        id: "msg-2",
+        threadId: "thread-2",
+        labelIds: ["INBOX", "UNREAD"],
+        snippet: "...",
+        payload: {
+          mimeType: "multipart/alternative",
+          headers: [
+            { name: "Subject", value: "Multipart" },
+            { name: "From", value: "a@b.com" },
+            { name: "Date", value: "Mon, 28 Apr 2026 10:00:00 +0200" },
+          ],
+          parts: [
+            {
+              mimeType: "text/plain",
+              body: { data: Buffer.from("texte brut").toString("base64url") },
+            },
+            {
+              mimeType: "text/html",
+              body: { data: Buffer.from("<p>HTML</p>").toString("base64url") },
+            },
+          ],
+        },
+      }),
+    })
+
+    const email = await getEmail("msg-2")
+    expect(email.body).toBe("<p>HTML</p>")
+    expect(email.isRead).toBe(false)
   })
 })
