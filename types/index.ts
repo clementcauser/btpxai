@@ -83,6 +83,14 @@ export type UpdateQuoteItemInput = Partial<{
 
 export type EmailStatus = "a_traiter" | "en_cours" | "repondu" | "archive"
 
+export type EmailCategory = "demande_devis" | "suivi_commande" | "question" | "autre"
+
+export type EmailClassification = {
+  category: EmailCategory
+  confidence: number
+  reasoning: string
+}
+
 export type EmailStatusRecord = {
   id: string
   message_id: string
