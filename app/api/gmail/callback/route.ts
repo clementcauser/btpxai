@@ -1,0 +1,77 @@
+import { NextRequest, NextResponse } from "next/server"
+import { headers } from "next/headers"
+import { auth } from "@/lib/auth"
+import { supabaseService } from "@/lib/supabase/service"
+import { env } from "@/lib/env"
+
+export async function GET(req: NextRequest) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) {
+    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/login`)
+  }
+
+  const code = req.nextUrl.searchParams.get("code")
+  const error = req.nextUrl.searchParams.get("error")
+
+  if (error || !code) {
+    return NextResponse.redirect(
+      `${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error`
+    )
+  }
+
+  const redirectUri = `${env.NEXT_PUBLIC_APP_URL}/api/gmail/callback`
+
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      code,
+      client_id: env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code",
+    }),
+  })
+
+  if (!tokenRes.ok) {
+    return NextResponse.redirect(
+      `${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error`
+    )
+  }
+
+  const tokens = (await tokenRes.json()) as {
+    access_token: string
+    refresh_token: string
+    expires_in: number
+  }
+
+  const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+    headers: { Authorization: `Bearer ${tokens.access_token}` },
+  })
+
+  if (!userInfoRes.ok) {
+    return NextResponse.redirect(
+      `${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error`
+    )
+  }
+
+  const userInfo = (await userInfoRes.json()) as { email: string }
+
+  const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString()
+  const now = new Date().toISOString()
+
+  await supabaseService.from("gmail_connections").delete().neq("id", "")
+
+  await supabaseService.from("gmail_connections").insert({
+    email: userInfo.email,
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
+    expires_at: expiresAt,
+    created_at: now,
+    updated_at: now,
+  })
+
+  return NextResponse.redirect(
+    `${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=connected`
+  )
+}

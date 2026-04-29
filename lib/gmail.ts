@@ -67,7 +67,7 @@ export async function listEmails(
   if (!listData.messages?.length) return []
 
   const messages = await Promise.all(
-    listData.messages.map(async ({ id, threadId }) => {
+    listData.messages.map(async ({ id }) => {
       const msgRes = await fetch(
         `${GMAIL_API}/messages/${id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
         { headers: { Authorization: `Bearer ${token}` } }
