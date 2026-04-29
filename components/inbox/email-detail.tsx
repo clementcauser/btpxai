@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import {
   Reply,
   Loader2,
@@ -10,12 +10,19 @@ import {
   Link2,
   Link2Off,
   User,
+  Sparkles,
 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
-import type { EmailDetail as EmailDetailType, EmailStatus, EmailStatusRecord } from "@/types"
+import type {
+  EmailDetail as EmailDetailType,
+  EmailStatus,
+  EmailStatusRecord,
+  EmailCategory,
+  EmailClassification,
+} from "@/types"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
@@ -28,6 +35,7 @@ type Props = {
   statusRecord: EmailStatusRecord | null
   clients: Client[]
   onStatusChange: (status: EmailStatus, clientId?: string | null) => void
+  onClassify?: (category: EmailCategory) => void
 }
 
 const STATUS_LABELS: Record<EmailStatus, string> = {
@@ -51,6 +59,32 @@ const ACTIVE_STATUS_STYLES: Record<EmailStatus, string> = {
   archive: "text-muted-foreground bg-muted/50 border-border ring-1 ring-border",
 }
 
+const CATEGORY_CONFIG: Record<
+  EmailCategory,
+  { label: string; color: string; bg: string }
+> = {
+  demande_devis: {
+    label: "Demande de devis",
+    color: "text-purple-400",
+    bg: "bg-purple-400/10 border-purple-400/30",
+  },
+  suivi_commande: {
+    label: "Suivi commande",
+    color: "text-cyan-400",
+    bg: "bg-cyan-400/10 border-cyan-400/30",
+  },
+  question: {
+    label: "Question",
+    color: "text-orange-400",
+    bg: "bg-orange-400/10 border-orange-400/30",
+  },
+  autre: {
+    label: "Autre",
+    color: "text-muted-foreground",
+    bg: "bg-muted/30 border-border",
+  },
+}
+
 const replySchema = z.object({
   body: z.string().min(1, "Le message ne peut pas être vide"),
 })
@@ -67,12 +101,17 @@ function parseEmailFromString(from: string): string {
   return match ? match[1] : from
 }
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+}
+
 export function EmailDetail({
   messageId,
   email: emailSummary,
   statusRecord,
   clients,
   onStatusChange,
+  onClassify,
 }: Props) {
   const [detail, setDetail] = useState<EmailDetailType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -81,6 +120,11 @@ export function EmailDetail({
   const [clientSearch, setClientSearch] = useState("")
   const [isSending, startSending] = useTransition()
   const [isArchiving, startArchiving] = useTransition()
+
+  const [classification, setClassification] = useState<EmailClassification | null>(null)
+  const [isClassifying, setIsClassifying] = useState(false)
+  const [isDrafting, setIsDrafting] = useState(false)
+  const classificationCalled = useRef(false)
 
   const form = useForm<ReplyForm>({
     resolver: zodResolver(replySchema),
@@ -92,6 +136,9 @@ export function EmailDetail({
     setShowReply(false)
     setShowClientPicker(false)
     setClientSearch("")
+    setClassification(null)
+    setIsClassifying(false)
+    classificationCalled.current = false
     form.reset()
     setIsLoading(true)
 
@@ -101,6 +148,65 @@ export function EmailDetail({
       .catch(() => toast.error("Impossible de charger l'email"))
       .finally(() => setIsLoading(false))
   }, [messageId, form])
+
+  // Auto-classify when the email body is loaded.
+  useEffect(() => {
+    if (!detail || classificationCalled.current) return
+    classificationCalled.current = true
+    setIsClassifying(true)
+
+    const plainBody = detail.body.trimStart().startsWith("<")
+      ? stripHtml(detail.body)
+      : detail.body
+
+    fetch("/api/agents/email/classify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject: detail.subject, body: plainBody }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: EmailClassification | null) => {
+        if (data) {
+          setClassification(data)
+          onClassify?.(data.category)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsClassifying(false))
+  }, [detail, onClassify])
+
+  async function generateDraft() {
+    if (!detail || !classification) return
+    setIsDrafting(true)
+    const plainBody = detail.body.trimStart().startsWith("<")
+      ? stripHtml(detail.body)
+      : detail.body
+
+    const linkedClient = statusRecord?.client_id
+      ? clients.find((c) => c.id === statusRecord.client_id)
+      : null
+
+    try {
+      const res = await fetch("/api/agents/email/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: detail.subject,
+          body: plainBody,
+          category: classification.category,
+          clientName: linkedClient?.name,
+        }),
+      })
+      if (!res.ok) throw new Error()
+      const data = (await res.json()) as { draft: string }
+      form.setValue("body", data.draft)
+      setShowReply(true)
+    } catch {
+      toast.error("Impossible de générer le brouillon")
+    } finally {
+      setIsDrafting(false)
+    }
+  }
 
   function onSubmit(values: ReplyForm) {
     if (!detail) return
@@ -145,10 +251,7 @@ export function EmailDetail({
   }
 
   function handleLinkClient(client: Client) {
-    onStatusChange(
-      statusRecord?.status ?? "a_traiter",
-      client.id
-    )
+    onStatusChange(statusRecord?.status ?? "a_traiter", client.id)
     setShowClientPicker(false)
     setClientSearch("")
     toast.success(`Lié à ${client.name}`)
@@ -166,14 +269,10 @@ export function EmailDetail({
 
   const senderAddress = parseEmailFromString(emailSummary.from)
   const autoMatchClient = !linkedClient
-    ? clients.find(
-        (c) => c.email?.toLowerCase() === senderAddress.toLowerCase()
-      )
+    ? clients.find((c) => c.email?.toLowerCase() === senderAddress.toLowerCase())
     : null
 
-  const { name: senderName, address: senderAddr } = parseSenderName(
-    emailSummary.from
-  )
+  const { name: senderName, address: senderAddr } = parseSenderName(emailSummary.from)
 
   const filteredClients = clients.filter(
     (c) =>
@@ -206,10 +305,47 @@ export function EmailDetail({
           </div>
           <div className="min-w-0">
             <p className="text-sm font-medium text-foreground">{senderName}</p>
-            <p className="text-[11px] text-muted-foreground font-mono">
-              {senderAddr}
-            </p>
+            <p className="text-[11px] text-muted-foreground font-mono">{senderAddr}</p>
           </div>
+        </div>
+
+        {/* Classification badge */}
+        <div className="flex items-center gap-2">
+          {isClassifying ? (
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono tracking-wider uppercase text-muted-foreground">
+              <Loader2 className="size-3 animate-spin" />
+              Analyse…
+            </span>
+          ) : classification ? (
+            <>
+              <span
+                data-testid="classification-badge"
+                className={cn(
+                  "inline-flex items-center gap-1 text-[10px] font-mono tracking-wider uppercase px-1.5 py-0.5 border",
+                  CATEGORY_CONFIG[classification.category].color,
+                  CATEGORY_CONFIG[classification.category].bg
+                )}
+              >
+                {CATEGORY_CONFIG[classification.category].label}
+              </span>
+              <span className="text-[10px] text-muted-foreground font-mono">
+                {Math.round(classification.confidence * 100)}%
+              </span>
+              <button
+                onClick={generateDraft}
+                disabled={isDrafting}
+                data-testid="generate-draft-btn"
+                className="inline-flex items-center gap-1 text-[10px] font-mono tracking-wider uppercase px-1.5 py-0.5 border border-primary/30 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+              >
+                {isDrafting ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : (
+                  <Sparkles className="size-3" />
+                )}
+                Brouillon IA
+              </button>
+            </>
+          ) : null}
         </div>
 
         {/* Status selector */}
@@ -217,22 +353,15 @@ export function EmailDetail({
           <p className="text-[10px] text-muted-foreground font-mono tracking-widest uppercase mb-2">
             Statut
           </p>
-          <div
-            data-testid="status-selector"
-            className="flex gap-1.5 flex-wrap"
-          >
-            {(
-              ["a_traiter", "en_cours", "repondu", "archive"] as EmailStatus[]
-            ).map((s) => (
+          <div data-testid="status-selector" className="flex gap-1.5 flex-wrap">
+            {(["a_traiter", "en_cours", "repondu", "archive"] as EmailStatus[]).map((s) => (
               <button
                 key={s}
                 data-testid={`status-btn-${s}`}
                 onClick={() => onStatusChange(s)}
                 className={cn(
                   "text-[10px] font-mono tracking-wider uppercase px-2.5 py-1 border transition-all",
-                  currentStatus === s
-                    ? ACTIVE_STATUS_STYLES[s]
-                    : STATUS_STYLES[s]
+                  currentStatus === s ? ACTIVE_STATUS_STYLES[s] : STATUS_STYLES[s]
                 )}
               >
                 {STATUS_LABELS[s]}
@@ -371,10 +500,7 @@ export function EmailDetail({
             </Button>
           </div>
         ) : (
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-2"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
             <Textarea
               placeholder="Votre réponse…"
               rows={4}

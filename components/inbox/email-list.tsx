@@ -16,8 +16,34 @@ import {
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import type { EmailSummary, EmailStatusRecord, EmailStatus } from "@/types"
+import type { EmailSummary, EmailStatusRecord, EmailStatus, EmailCategory } from "@/types"
 import { EmailDetail } from "./email-detail"
+
+const CATEGORY_CONFIG: Record<
+  EmailCategory,
+  { label: string; color: string; bg: string }
+> = {
+  demande_devis: {
+    label: "Devis",
+    color: "text-purple-400",
+    bg: "bg-purple-400/10 border-purple-400/30",
+  },
+  suivi_commande: {
+    label: "Suivi",
+    color: "text-cyan-400",
+    bg: "bg-cyan-400/10 border-cyan-400/30",
+  },
+  question: {
+    label: "Question",
+    color: "text-orange-400",
+    bg: "bg-orange-400/10 border-orange-400/30",
+  },
+  autre: {
+    label: "Autre",
+    color: "text-muted-foreground",
+    bg: "bg-muted/30 border-border",
+  },
+}
 
 type Client = { id: string; name: string; email: string | null }
 
@@ -87,6 +113,7 @@ function parseSenderName(from: string): { name: string; address: string } {
 export function EmailList({ emails, initialStatuses, clients }: Props) {
   const [statuses, setStatuses] =
     useState<Record<string, EmailStatusRecord>>(initialStatuses)
+  const [classifications, setClassifications] = useState<Record<string, EmailCategory>>({})
   const [selectedId, setSelectedId] = useState<string | null>(
     emails[0]?.id ?? null
   )
@@ -340,6 +367,18 @@ export function EmailList({ emails, initialStatuses, clients }: Props) {
                     >
                       {cfg.label}
                     </span>
+                    {classifications[email.id] && (
+                      <span
+                        data-testid="classification-badge-list"
+                        className={cn(
+                          "inline-flex items-center gap-1 text-[10px] font-mono tracking-wider uppercase px-1.5 py-0.5 border",
+                          CATEGORY_CONFIG[classifications[email.id]].color,
+                          CATEGORY_CONFIG[classifications[email.id]].bg
+                        )}
+                      >
+                        {CATEGORY_CONFIG[classifications[email.id]].label}
+                      </span>
+                    )}
                     {linkedClient && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 border border-border text-muted-foreground bg-muted/20">
                         {linkedClient.name}
@@ -363,6 +402,9 @@ export function EmailList({ emails, initialStatuses, clients }: Props) {
               clients={clients}
               onStatusChange={(status, clientId) =>
                 updateStatus(selectedEmail, status, clientId)
+              }
+              onClassify={(category) =>
+                setClassifications((prev) => ({ ...prev, [selectedId]: category }))
               }
             />
           ) : (
