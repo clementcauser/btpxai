@@ -4,7 +4,6 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 
 // Charge .env.local avant toute évaluation de lib/env (qui valide au chargement).
-// fs et path sont safe — ils ne lisent pas process.env.
 try {
   const content = readFileSync(resolve(process.cwd(), ".env.local"), "utf-8");
   for (const line of content.split("\n")) {
@@ -19,17 +18,17 @@ try {
 
 async function main() {
   // Import dynamique APRÈS que les vars sont en place
-  const { auth } = await import("../lib/auth");
+  const { supabaseService } = await import("../lib/supabase/service");
 
-  const result = await auth.api.createUser({
-    body: {
-      email: "admin@btpxai.fr",
-      password: "123qweASD!!!",
-      name: "Admin",
-      role: "admin",
-    },
+  const { data, error } = await supabaseService.auth.admin.createUser({
+    email: "admin@btpxai.fr",
+    password: "123qweASD!!!",
+    email_confirm: true,
+    user_metadata: { name: "Admin", role: "admin" },
   });
-  console.log("Utilisateur admin créé :", result);
+
+  if (error) throw error;
+  console.log("Utilisateur admin créé :", data.user?.id);
   process.exit(0);
 }
 

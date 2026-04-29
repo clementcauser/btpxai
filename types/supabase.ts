@@ -90,6 +90,44 @@ export type Database = {
           },
         ]
       }
+      email_statuses: {
+        Row: {
+          id: string
+          message_id: string
+          thread_id: string
+          status: "a_traiter" | "en_cours" | "repondu" | "archive"
+          client_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          thread_id: string
+          status?: "a_traiter" | "en_cours" | "repondu" | "archive"
+          client_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          thread_id?: string
+          status?: "a_traiter" | "en_cours" | "repondu" | "archive"
+          client_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_statuses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
