@@ -81,6 +81,29 @@ export type UpdateQuoteItemInput = Partial<{
   unit: string | null
 }>
 
+export type EmailStatus = "a_traiter" | "en_cours" | "repondu" | "archive"
+
+export type EmailStatusRecord = {
+  id: string
+  message_id: string
+  thread_id: string
+  status: EmailStatus
+  client_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type LinkedClient = {
+  id: string
+  name: string
+  email: string | null
+}
+
+export type EmailSummaryWithStatus = EmailSummary & {
+  statusRecord: EmailStatusRecord | null
+  linkedClient: LinkedClient | null
+}
+
 export type GmailConnection = {
   id: string
   email: string
