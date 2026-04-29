@@ -180,3 +180,18 @@ export async function sendEmail(
 
   if (!res.ok) throw new Error("Erreur Gmail API (sendEmail)")
 }
+
+export async function markAsRead(id: string): Promise<void> {
+  const token = await getValidAccessToken()
+
+  const res = await fetch(`${GMAIL_API}/messages/${id}/modify`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ removeLabelIds: ["UNREAD"] }),
+  })
+
+  if (!res.ok) throw new Error(`Erreur Gmail API (markAsRead ${id})`)
+}

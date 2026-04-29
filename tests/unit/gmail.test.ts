@@ -12,7 +12,7 @@ const mockFetch = vi.fn()
 vi.stubGlobal("fetch", mockFetch)
 
 import { supabaseService } from "@/lib/supabase/service"
-import { getValidAccessToken, listEmails, getEmail, sendEmail } from "@/lib/gmail"
+import { getValidAccessToken, listEmails, getEmail, sendEmail, markAsRead } from "@/lib/gmail"
 
 const mockSupabase = supabaseService as {
   from: ReturnType<typeof vi.fn>
@@ -274,5 +274,22 @@ describe("sendEmail", () => {
     const decoded = Buffer.from(callBody.raw, "base64url").toString("utf-8")
     expect(decoded).toContain("In-Reply-To: original-msg-id")
     expect(decoded).toContain("References: original-msg-id")
+  })
+})
+
+describe("markAsRead", () => {
+  it("appelle Gmail API avec removeLabelIds UNREAD", async () => {
+    mockValidToken()
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+
+    await markAsRead("msg-1")
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://gmail.googleapis.com/gmail/v1/users/me/messages/msg-1/modify",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ removeLabelIds: ["UNREAD"] }),
+      })
+    )
   })
 })
