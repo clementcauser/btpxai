@@ -44,3 +44,55 @@ export async function getValidAccessToken(): Promise<string> {
 
   return access_token
 }
+
+function getHeader(headers: { name: string; value: string }[], name: string): string {
+  return headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value ?? ""
+}
+
+export async function listEmails(
+  options: { maxResults?: number; query?: string } = {}
+): Promise<EmailSummary[]> {
+  const token = await getValidAccessToken()
+  const { maxResults = 20, query } = options
+
+  const params = new URLSearchParams({ maxResults: String(maxResults), labelIds: "INBOX" })
+  if (query) params.set("q", query)
+
+  const listRes = await fetch(`${GMAIL_API}/messages?${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!listRes.ok) throw new Error("Erreur Gmail API (list)")
+
+  const listData = (await listRes.json()) as { messages?: { id: string; threadId: string }[] }
+  if (!listData.messages?.length) return []
+
+  const messages = await Promise.all(
+    listData.messages.map(async ({ id, threadId }) => {
+      const msgRes = await fetch(
+        `${GMAIL_API}/messages/${id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      if (!msgRes.ok) throw new Error(`Erreur Gmail API (get ${id})`)
+
+      const msg = (await msgRes.json()) as {
+        id: string
+        threadId: string
+        labelIds: string[]
+        snippet: string
+        payload: { headers: { name: string; value: string }[] }
+      }
+
+      return {
+        id: msg.id,
+        threadId: msg.threadId,
+        subject: getHeader(msg.payload.headers, "Subject"),
+        from: getHeader(msg.payload.headers, "From"),
+        date: getHeader(msg.payload.headers, "Date"),
+        snippet: msg.snippet,
+        isRead: !msg.labelIds.includes("UNREAD"),
+      }
+    })
+  )
+
+  return messages
+}

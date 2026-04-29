@@ -12,7 +12,7 @@ const mockFetch = vi.fn()
 vi.stubGlobal("fetch", mockFetch)
 
 import { supabaseService } from "@/lib/supabase/service"
-import { getValidAccessToken } from "@/lib/gmail"
+import { getValidAccessToken, listEmails } from "@/lib/gmail"
 
 const mockSupabase = supabaseService as {
   from: ReturnType<typeof vi.fn>
@@ -31,6 +31,24 @@ function makeBuilder(result: { data: unknown; error: unknown }) {
 beforeEach(() => {
   vi.clearAllMocks()
 })
+
+// Helper : simule getValidAccessToken (token valide, pas de refresh)
+function mockValidToken() {
+  const futureDate = new Date(Date.now() + 3600 * 1000).toISOString()
+  const builder = makeBuilder({
+    data: {
+      id: "conn-1",
+      email: "contact@entreprise.fr",
+      access_token: "valid-token",
+      refresh_token: "refresh-token",
+      expires_at: futureDate,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    error: null,
+  })
+  mockSupabase.from.mockReturnValue(builder)
+}
 
 describe("getValidAccessToken", () => {
   it("retourne l'access_token existant si non expiré", async () => {
@@ -96,5 +114,59 @@ describe("getValidAccessToken", () => {
     await expect(getValidAccessToken()).rejects.toThrow(
       "Aucune connexion Gmail configurée"
     )
+  })
+})
+
+describe("listEmails", () => {
+  it("retourne une liste d'EmailSummary", async () => {
+    mockValidToken()
+
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          messages: [{ id: "msg-1", threadId: "thread-1" }],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: "msg-1",
+          threadId: "thread-1",
+          labelIds: ["INBOX", "UNREAD"],
+          snippet: "Bonjour, j'aimerais un devis...",
+          payload: {
+            headers: [
+              { name: "Subject", value: "Demande de devis" },
+              { name: "From", value: "Jean Dupont <jean@example.com>" },
+              { name: "Date", value: "Mon, 28 Apr 2026 10:00:00 +0200" },
+            ],
+          },
+        }),
+      })
+
+    const emails = await listEmails({ maxResults: 10 })
+
+    expect(emails).toHaveLength(1)
+    expect(emails[0]).toEqual({
+      id: "msg-1",
+      threadId: "thread-1",
+      subject: "Demande de devis",
+      from: "Jean Dupont <jean@example.com>",
+      date: "Mon, 28 Apr 2026 10:00:00 +0200",
+      snippet: "Bonjour, j'aimerais un devis...",
+      isRead: false,
+    })
+  })
+
+  it("retourne un tableau vide si aucun message", async () => {
+    mockValidToken()
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}),
+    })
+
+    const emails = await listEmails()
+    expect(emails).toEqual([])
   })
 })
