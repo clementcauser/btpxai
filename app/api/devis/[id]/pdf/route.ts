@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
+import { headers } from "next/headers"
 import { renderToBuffer } from "@react-pdf/renderer"
 import React from "react"
 import { createClient } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
 import { getQuoteWithContext } from "@/lib/quotes"
 import { QuotePDFDocument } from "@/components/devis/quote-pdf-document"
+import { auth } from "@/lib/auth"
 
 const BUCKET = "quotes-pdf"
 
@@ -22,13 +24,12 @@ export async function GET(
 ) {
   const { id } = await params
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
   }
+
+  const supabase = await createClient()
 
   let quote
   try {
