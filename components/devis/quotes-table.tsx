@@ -16,6 +16,8 @@ import {
   FileText,
   ChevronDown,
   Calendar,
+  Bell,
+  BellOff,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -193,6 +195,25 @@ export function QuotesTable({ quotes }: Props) {
     [router]
   )
 
+  const handleToggleReminders = useCallback(
+    async (id: string, currentlyEnabled: boolean) => {
+      const res = await fetch(`/api/devis/${id}/reminders`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !currentlyEnabled }),
+      })
+      if (res.ok) {
+        toast.success(
+          currentlyEnabled ? "Relances désactivées" : "Relances activées"
+        )
+        startTransition(() => router.refresh())
+      } else {
+        toast.error("Impossible de modifier les relances")
+      }
+    },
+    [router]
+  )
+
   return (
     <div className="space-y-4">
       {/* Status stat pills */}
@@ -355,6 +376,7 @@ export function QuotesTable({ quotes }: Props) {
                   onSend={handleSend}
                   onDuplicate={handleDuplicate}
                   onArchive={handleArchive}
+                  onToggleReminders={handleToggleReminders}
                 />
               ))
             )}
@@ -423,6 +445,7 @@ type RowProps = {
   onSend: (id: string) => Promise<void>
   onDuplicate: (id: string) => Promise<void>
   onArchive: (id: string) => Promise<void>
+  onToggleReminders: (id: string, currentlyEnabled: boolean) => Promise<void>
 }
 
 function QuoteRow({
@@ -431,7 +454,9 @@ function QuoteRow({
   onSend,
   onDuplicate,
   onArchive,
+  onToggleReminders,
 }: RowProps) {
+  const remindersEnabled = quote.reminders_enabled ?? true
   const reference =
     quote.reference ?? `DEV-${quote.id.slice(0, 8).toUpperCase()}`
   const config = STATUS_CONFIG[quote.status]
@@ -558,6 +583,24 @@ function QuoteRow({
             data-testid="action-archive"
           >
             <Archive className="size-3.5" />
+          </button>
+
+          <button
+            onClick={() => onToggleReminders(quote.id, remindersEnabled)}
+            title={remindersEnabled ? "Désactiver les relances" : "Activer les relances"}
+            data-testid="action-toggle-reminders"
+            className={cn(
+              "size-7 flex items-center justify-center rounded-sm transition-colors",
+              remindersEnabled
+                ? "text-sky-400 hover:text-sky-300 hover:bg-sky-400/10"
+                : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted"
+            )}
+          >
+            {remindersEnabled ? (
+              <Bell className="size-3.5" />
+            ) : (
+              <BellOff className="size-3.5" />
+            )}
           </button>
         </div>
       </td>

@@ -303,6 +303,38 @@ export type Database = {
           },
         ]
       }
+      quote_reminders: {
+        Row: {
+          id: string
+          quote_id: string
+          type: string
+          sent_at: string
+          email_to: string
+        }
+        Insert: {
+          id?: string
+          quote_id: string
+          type: string
+          sent_at?: string
+          email_to: string
+        }
+        Update: {
+          id?: string
+          quote_id?: string
+          type?: string
+          sent_at?: string
+          email_to?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_reminders_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quotes: {
         Row: {
           created_at: string
@@ -310,6 +342,7 @@ export type Database = {
           notes: string | null
           project_id: string
           reference: string | null
+          reminders_enabled: boolean
           sent_at: string | null
           status: Database["public"]["Enums"]["quote_status"]
           total_ht: number
@@ -322,6 +355,7 @@ export type Database = {
           notes?: string | null
           project_id: string
           reference?: string | null
+          reminders_enabled?: boolean
           sent_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           total_ht?: number
@@ -334,6 +368,7 @@ export type Database = {
           notes?: string | null
           project_id?: string
           reference?: string | null
+          reminders_enabled?: boolean
           sent_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           total_ht?: number

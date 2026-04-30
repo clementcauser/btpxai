@@ -151,3 +151,13 @@ export type AppSetting = {
   value: string
   updated_at: string
 }
+
+export type ReminderType = "quote_j7" | "quote_j14" | "payment"
+
+export type QuoteReminder = {
+  id: string
+  quote_id: string
+  type: ReminderType
+  sent_at: string
+  email_to: string
+}
