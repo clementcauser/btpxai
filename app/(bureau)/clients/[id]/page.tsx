@@ -20,6 +20,7 @@ import { getTerrainPhotos } from "@/lib/terrain-photos"
 import type { TerrainNote, TerrainPhoto } from "@/types"
 import { buttonVariants } from "@/components/ui/button"
 import { ClientDetailActions } from "@/components/clients/client-detail-actions"
+import ProjectStepsManager from "@/components/bureau/project-steps-manager"
 import { cn } from "@/lib/utils"
 import type { QuoteStatus } from "@/types"
 
@@ -459,6 +460,9 @@ export default async function ClientDetailPage({
                     </div>
                   )
                 })()}
+
+                {/* Project steps check-list */}
+                <ProjectStepsManager projectId={project.id} />
               </div>
             ))}
           </div>

@@ -233,6 +233,41 @@ export type Database = {
         }
         Relationships: []
       }
+      project_steps: {
+        Row: {
+          id: string
+          project_id: string
+          label: string
+          order: number
+          completed_at: string | null
+          completed_by: string | null
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          label: string
+          order: number
+          completed_at?: string | null
+          completed_by?: string | null
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          label?: string
+          order?: number
+          completed_at?: string | null
+          completed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_steps_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           client_id: string
