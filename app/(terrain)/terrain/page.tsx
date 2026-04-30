@@ -6,7 +6,7 @@ import { cookies } from "next/headers"
 import type { ProjectWithClient } from "@/types"
 
 async function isE2ETestRequest(): Promise<boolean> {
-  if (process.env.NODE_ENV === "production") return false
+  if (process.env.NODE_ENV === "production" && process.env.IS_E2E !== "true") return false
   const cookieStore = await cookies()
   return cookieStore.get("cypress-test-user")?.value === "ouvrier"
 }

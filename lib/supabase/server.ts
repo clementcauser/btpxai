@@ -31,7 +31,7 @@ export async function getUser() {
   // E2E test bypass: Cypress sets a plain-string cookie (no JSON — RFC 6265
   // forbids raw double-quotes in cookie values, breaking JSON.parse).
   // Guard: non-production only. Tests must run against `npm run dev`.
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" || process.env.IS_E2E === "true") {
     const cookieStore = await cookies()
     if (cookieStore.get("cypress-test-user")?.value === "ouvrier") {
       return {

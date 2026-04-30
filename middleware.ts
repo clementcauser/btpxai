@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   let user = supabaseUser
   let role = user?.user_metadata?.role as string | undefined
 
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" || process.env.IS_E2E === "true") {
     const testUserCookie = request.cookies.get("cypress-test-user")?.value
     if (testUserCookie === "ouvrier") {
       user = { id: "test-user-id", email: "ouvrier@test.com", user_metadata: { role: "ouvrier" } } as any

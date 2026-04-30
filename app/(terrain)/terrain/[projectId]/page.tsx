@@ -21,7 +21,7 @@ const CYPRESS_FIXTURE: ProjectWithClient = {
 }
 
 async function isE2ETestRequest(projectId: string): Promise<boolean> {
-  if (process.env.NODE_ENV === "production") return false
+  if (process.env.NODE_ENV === "production" && process.env.IS_E2E !== "true") return false
   const cookieStore = await cookies()
   return (
     cookieStore.get("cypress-test-user")?.value === "ouvrier" &&
