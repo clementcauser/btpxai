@@ -4,24 +4,48 @@ import { useState, useRef, useCallback } from "react"
 import { Mic, Square, Clock, FileText } from "lucide-react"
 import type { TerrainNote } from "@/types"
 
+// Web Speech API types — not yet in all TypeScript lib.dom.d.ts versions
+interface SpeechRecognitionResult {
+  readonly length: number
+  [index: number]: { readonly transcript: string }
+}
+
+interface SpeechRecognitionEvent {
+  readonly results: SpeechRecognitionResult[] & { readonly length: number }
+}
+
+interface SpeechRecognitionLike {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  onresult: ((event: SpeechRecognitionEvent) => void) | null
+  start(): void
+  stop(): void
+}
+
+interface WindowWithSpeech extends Window {
+  SpeechRecognition?: new () => SpeechRecognitionLike
+  webkitSpeechRecognition?: new () => SpeechRecognitionLike
+}
+
 export default function NotesTab({ projectId }: { projectId: string }) {
   const [isRecording, setIsRecording] = useState(false)
   const [notes, setNotes] = useState<TerrainNote[]>([])
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
 
   const startRecording = useCallback(() => {
-    const SpeechRecognition =
-      window.SpeechRecognition ?? window.webkitSpeechRecognition
-    if (!SpeechRecognition) return
+    const w = window as WindowWithSpeech
+    const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
+    if (!SR) return
 
-    const recognition = new SpeechRecognition()
+    const recognition = new SR()
     recognition.lang = "fr-FR"
     recognition.continuous = true
     recognition.interimResults = false
 
     recognition.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map((r) => r[0].transcript)
+      const transcript = Array.from({ length: event.results.length })
+        .map((_, i) => event.results[i][0].transcript)
         .join(" ")
         .trim()
 
