@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import type { EmailSummary, EmailStatusRecord, EmailStatus, EmailCategory } from "@/types"
 import { EmailDetail } from "./email-detail"
+import { clearClientSummaryCache } from "./client-summary-panel"
 
 const CATEGORY_CONFIG: Record<
   EmailCategory,
@@ -137,6 +138,10 @@ export function EmailList({ emails, initialStatuses, clients }: Props) {
           const record = payload.new as EmailStatusRecord
           if (!record?.message_id) return
           setStatuses((prev) => ({ ...prev, [record.message_id]: record }))
+          // Invalidate cached AI summary when a new email arrives for a client
+          if (payload.eventType === "INSERT" && record.client_id) {
+            clearClientSummaryCache(record.client_id)
+          }
         }
       )
       .subscribe()

@@ -2,6 +2,11 @@ import { generateObject } from "ai"
 import { anthropic } from "@ai-sdk/anthropic"
 import { z } from "zod"
 
+export const clientSummarySchema = z.object({
+  summary: z.string(),
+})
+export type ClientSummary = z.infer<typeof clientSummarySchema>
+
 export const emailCategorySchema = z.enum([
   "demande_devis",
   "suivi_commande",
@@ -81,6 +86,37 @@ export async function classifyEmail(
   })
 
   return emailClassificationSchema.parse(object)
+}
+
+const CLIENT_SUMMARY_SYSTEM_PROMPT = `Tu es l'assistant de gestion commerciale d'une PME familiale de métallerie et serrurerie. Tu génères des résumés contextuels concis sur les clients pour aider l'équipe bureau lors de la consultation des emails.
+
+Règles :
+- Résumé en 3-4 lignes maximum, en français
+- Inclure les informations utiles : ancienneté, projets/devis, historique email, points d'attention
+- Ton factuel et professionnel, sans redondance ni répétition
+- Si peu d'historique disponible, l'indiquer brièvement
+- Ne jamais inventer d'informations absentes des données fournies`
+
+export async function generateClientSummary(
+  context: string,
+  signal?: AbortSignal
+): Promise<ClientSummary> {
+  const timeoutSignal = AbortSignal.timeout(30_000)
+  const abortSignal =
+    signal && typeof AbortSignal.any === "function"
+      ? AbortSignal.any([signal, timeoutSignal])
+      : timeoutSignal
+
+  const { object } = await generateObject({
+    model: anthropic("claude-sonnet-4-6"),
+    schema: z.object({ summary: z.string() }),
+    system: CLIENT_SUMMARY_SYSTEM_PROMPT,
+    prompt: context,
+    maxOutputTokens: 256,
+    abortSignal,
+  })
+
+  return clientSummarySchema.parse(object)
 }
 
 export async function draftEmailReply(
