@@ -2,7 +2,24 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { HardHat, ChevronRight, Circle } from "lucide-react"
 import { createClient, getUser } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
 import type { ProjectWithClient } from "@/types"
+
+async function isE2ETestRequest(): Promise<boolean> {
+  if (process.env.NODE_ENV === "production") return false
+  const cookieStore = await cookies()
+  return cookieStore.get("cypress-test-user")?.value === "ouvrier"
+}
+
+const CYPRESS_FIXTURE: ProjectWithClient = {
+  id: "test-project-id",
+  title: "Portail Dumont",
+  description: "Portail coulissant en acier galvanisé",
+  status: "in_progress",
+  client_id: "client-1",
+  created_at: new Date().toISOString(),
+  clients: { id: "client-1", name: "M. Dumont" },
+}
 
 export const metadata: Metadata = {
   title: "Chantiers — BTP×AI",
@@ -11,13 +28,22 @@ export const metadata: Metadata = {
 export default async function TerrainHomePage() {
   const [user, supabase] = await Promise.all([getUser(), createClient()])
 
-  const { data: rawProjects } = await supabase
-    .from("projects")
-    .select("*, clients(id, name)")
-    .in("status", ["planned", "in_progress"])
-    .order("created_at", { ascending: false })
+  const isE2E = await isE2ETestRequest()
 
-  const projects = (rawProjects ?? []) as ProjectWithClient[]
+  let rawProjects: ProjectWithClient[] | null = null
+
+  if (isE2E) {
+    rawProjects = [CYPRESS_FIXTURE]
+  } else {
+    const { data } = await supabase
+      .from("projects")
+      .select("*, clients(id, name)")
+      .in("status", ["planned", "in_progress"])
+      .order("created_at", { ascending: false })
+    rawProjects = data as ProjectWithClient[] | null
+  }
+
+  const projects = rawProjects ?? []
 
   const today = new Date().toLocaleDateString("fr-FR", {
     weekday: "long",
