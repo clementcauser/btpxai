@@ -9,6 +9,7 @@ import {
   Mail,
   Settings,
   HardHat,
+  Package,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -23,6 +24,7 @@ const bureauNav: NavItem[] = [
   { href: "/devis", label: "Devis", icon: FileText },
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/inbox", label: "Messagerie", icon: Mail },
+  { href: "/materiaux", label: "Matériaux", icon: Package },
   { href: "/parametres", label: "Paramètres", icon: Settings },
 ]
 

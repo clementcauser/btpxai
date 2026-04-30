@@ -33,11 +33,19 @@ export async function getUser() {
   // Guard: non-production only. Tests must run against `npm run dev`.
   if (process.env.NODE_ENV !== "production" || process.env.IS_E2E === "true") {
     const cookieStore = await cookies()
-    if (cookieStore.get("cypress-test-user")?.value === "ouvrier") {
+    const cypressRole = cookieStore.get("cypress-test-user")?.value
+    if (cypressRole === "ouvrier") {
       return {
         id: "test-user-id",
         email: "ouvrier@test.com",
         user_metadata: { role: "ouvrier" },
+      }
+    }
+    if (cypressRole === "bureau") {
+      return {
+        id: "test-bureau-id",
+        email: "bureau@test.com",
+        user_metadata: { role: "bureau" },
       }
     }
   }
