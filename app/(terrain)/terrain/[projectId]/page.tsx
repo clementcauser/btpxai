@@ -24,7 +24,7 @@ async function isE2ETestRequest(projectId: string): Promise<boolean> {
   if (process.env.NODE_ENV === "production") return false
   const cookieStore = await cookies()
   return (
-    cookieStore.get("cypress-test-user") !== undefined &&
+    cookieStore.get("cypress-test-user")?.value === "ouvrier" &&
     projectId === "test-project-id"
   )
 }

@@ -14,14 +14,7 @@ declare global {
 }
 
 Cypress.Commands.add("loginAsOuvrier", () => {
-  cy.setCookie(
-    "cypress-test-user",
-    JSON.stringify({
-      id: "test-user-id",
-      email: "ouvrier@test.com",
-      user_metadata: { role: "ouvrier" },
-    }),
-    // Ensure the cookie is sent to the Next.js server on navigation
-    { path: "/", sameSite: "lax" }
-  )
+  // Plain ASCII string only — JSON values contain " which RFC 6265 forbids
+  // in raw cookie values, causing browsers to silently corrupt the payload.
+  cy.setCookie("cypress-test-user", "ouvrier", { path: "/", sameSite: "lax" })
 })

@@ -28,20 +28,16 @@ export async function createClient() {
 }
 
 export async function getUser() {
-  // E2E test bypass: Cypress sets this cookie to simulate a logged-in user.
-  // Never active in production (NODE_ENV guard).
+  // E2E test bypass: Cypress sets a plain-string cookie (no JSON — RFC 6265
+  // forbids raw double-quotes in cookie values, breaking JSON.parse).
+  // Guard: non-production only. Tests must run against `npm run dev`.
   if (process.env.NODE_ENV !== "production") {
     const cookieStore = await cookies()
-    const testCookie = cookieStore.get("cypress-test-user")
-    if (testCookie?.value) {
-      try {
-        return JSON.parse(testCookie.value) as {
-          id: string
-          email: string
-          user_metadata: { role: string }
-        }
-      } catch {
-        // malformed cookie — fall through to real auth
+    if (cookieStore.get("cypress-test-user")?.value === "ouvrier") {
+      return {
+        id: "test-user-id",
+        email: "ouvrier@test.com",
+        user_metadata: { role: "ouvrier" },
       }
     }
   }
