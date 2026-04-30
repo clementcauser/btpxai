@@ -1,10 +1,9 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
-import { Mic, Square, Clock, FileText } from "lucide-react"
+import { useState, useRef, useCallback, useEffect } from "react"
+import { Mic, Square, Clock, FileText, Loader2 } from "lucide-react"
 import type { TerrainNote } from "@/types"
 
-// Web Speech API types — not yet in all TypeScript lib.dom.d.ts versions
 interface SpeechRecognitionResult {
   readonly length: number
   [index: number]: { readonly transcript: string }
@@ -28,12 +27,47 @@ interface WindowWithSpeech extends Window {
   webkitSpeechRecognition?: new () => SpeechRecognitionLike
 }
 
-export default function NotesTab({ projectId }: { projectId: string }) {
-  const [isRecording, setIsRecording] = useState(false)
-  const [notes, setNotes] = useState<TerrainNote[]>([])
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
+type RecordingState = "idle" | "recording" | "uploading"
 
-  const startRecording = useCallback(() => {
+export default function NotesTab({ projectId }: { projectId: string }) {
+  const [recordingState, setRecordingState] = useState<RecordingState>("idle")
+  const [notes, setNotes] = useState<TerrainNote[]>([])
+  const [hasSpeechAPI, setHasSpeechAPI] = useState(true)
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+
+  useEffect(() => {
+    const w = window as WindowWithSpeech
+    setHasSpeechAPI(!!(w.SpeechRecognition ?? w.webkitSpeechRecognition))
+
+    fetch(`/api/terrain/notes?project_id=${projectId}`)
+      .then((r) => r.json())
+      .then((json: { notes?: TerrainNote[] }) => {
+        if (json.notes) setNotes(json.notes)
+      })
+      .catch(() => {
+        // silently ignore load errors
+      })
+  }, [projectId])
+
+  const persistNote = useCallback(
+    async (formData: FormData): Promise<TerrainNote | null> => {
+      try {
+        const res = await fetch("/api/terrain/notes", { method: "POST", body: formData })
+        if (!res.ok) return null
+        const json = (await res.json()) as { note?: TerrainNote }
+        return json.note ?? null
+      } catch {
+        return null
+      }
+    },
+    []
+  )
+
+  // ─── Web Speech path ──────────────────────────────────────────────────────────
+
+  const startSpeechRecording = useCallback(() => {
     const w = window as WindowWithSpeech
     const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
     if (!SR) return
@@ -43,50 +77,115 @@ export default function NotesTab({ projectId }: { projectId: string }) {
     recognition.continuous = true
     recognition.interimResults = false
 
-    recognition.onresult = (event) => {
+    recognition.onresult = async (event) => {
       const transcript = Array.from({ length: event.results.length })
         .map((_, i) => event.results[i][0].transcript)
         .join(" ")
         .trim()
 
-      if (transcript) {
-        const note: TerrainNote = {
-          id: crypto.randomUUID(),
-          project_id: projectId,
-          user_id: "",
-          transcription: transcript,
-          audio_url: null,
-          created_at: new Date().toISOString(),
-        }
-        setNotes((prev) => [note, ...prev])
+      if (!transcript) return
+
+      const fd = new FormData()
+      fd.append("project_id", projectId)
+      fd.append("transcription", transcript)
+
+      const saved = await persistNote(fd)
+      if (saved) {
+        setNotes((prev) => [saved, ...prev])
+      } else {
+        // Optimistic fallback if API fails
+        setNotes((prev) => [
+          {
+            id: crypto.randomUUID(),
+            project_id: projectId,
+            user_id: "",
+            transcription: transcript,
+            audio_url: null,
+            created_at: new Date().toISOString(),
+          },
+          ...prev,
+        ])
       }
     }
 
     recognition.start()
     recognitionRef.current = recognition
-    setIsRecording(true)
-  }, [projectId])
+    setRecordingState("recording")
+  }, [projectId, persistNote])
 
-  const stopRecording = useCallback(() => {
+  const stopSpeechRecording = useCallback(() => {
     recognitionRef.current?.stop()
     recognitionRef.current = null
-    setIsRecording(false)
+    setRecordingState("idle")
   }, [])
 
-  const toggleRecording = () => {
-    if (isRecording) {
-      stopRecording()
+  // ─── MediaRecorder fallback path ──────────────────────────────────────────────
+
+  const startMediaRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" })
+      audioChunksRef.current = []
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data)
+      }
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop())
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" })
+        setRecordingState("uploading")
+
+        const fd = new FormData()
+        fd.append("project_id", projectId)
+        fd.append("audio", blob, "note.webm")
+
+        const saved = await persistNote(fd)
+        if (saved) setNotes((prev) => [saved, ...prev])
+        setRecordingState("idle")
+      }
+
+      recorder.start()
+      mediaRecorderRef.current = recorder
+      setRecordingState("recording")
+    } catch {
+      // Microphone denied — do nothing
+    }
+  }, [projectId, persistNote])
+
+  const stopMediaRecording = useCallback(() => {
+    mediaRecorderRef.current?.stop()
+    mediaRecorderRef.current = null
+  }, [])
+
+  // ─── Toggle handler ───────────────────────────────────────────────────────────
+
+  const handleToggle = () => {
+    if (recordingState === "recording") {
+      if (hasSpeechAPI) {
+        stopSpeechRecording()
+      } else {
+        stopMediaRecording()
+      }
     } else {
-      startRecording()
+      if (hasSpeechAPI) {
+        startSpeechRecording()
+      } else {
+        startMediaRecording()
+      }
     }
   }
+
+  const isRecording = recordingState === "recording"
+  const isUploading = recordingState === "uploading"
 
   return (
     <div className="p-4 space-y-4">
       <button
-        onClick={toggleRecording}
+        onClick={handleToggle}
+        disabled={isUploading}
         data-testid="record-button"
-        className="w-full flex items-center justify-center gap-3 rounded-sm font-bold uppercase tracking-wider transition-all active:scale-[0.97]"
+        className="w-full flex items-center justify-center gap-3 rounded-sm font-bold uppercase tracking-wider transition-all active:scale-[0.97] disabled:opacity-60"
         style={{
           height: "56px",
           fontFamily: "var(--font-barlow)",
@@ -105,7 +204,7 @@ export default function NotesTab({ projectId }: { projectId: string }) {
         ) : (
           <>
             <Mic className="w-5 h-5" />
-            Enregistrer une note vocale
+            {hasSpeechAPI ? "Enregistrer une note vocale" : "Enregistrer un fichier audio"}
           </>
         )}
       </button>
@@ -121,6 +220,18 @@ export default function NotesTab({ projectId }: { projectId: string }) {
             style={{ fontFamily: "var(--font-barlow)" }}
           >
             Enregistrement en cours…
+          </span>
+        </div>
+      )}
+
+      {isUploading && (
+        <div className="flex items-center justify-center gap-2 py-2">
+          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          <span
+            className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+            style={{ fontFamily: "var(--font-barlow)" }}
+          >
+            Transcription en cours…
           </span>
         </div>
       )}
@@ -142,6 +253,14 @@ export default function NotesTab({ projectId }: { projectId: string }) {
               <p className="text-sm text-foreground leading-relaxed">
                 {note.transcription ?? "Transcription en cours…"}
               </p>
+              {note.audio_url && (
+                <audio
+                  controls
+                  src={note.audio_url}
+                  className="w-full mt-2 h-8"
+                  style={{ colorScheme: "dark" }}
+                />
+              )}
               <div className="flex items-center gap-1.5 mt-3">
                 <Clock className="w-3 h-3 text-muted-foreground" />
                 <span className="text-[11px] text-muted-foreground">
@@ -156,7 +275,7 @@ export default function NotesTab({ projectId }: { projectId: string }) {
         </div>
       )}
 
-      {notes.length === 0 && !isRecording && (
+      {notes.length === 0 && !isRecording && !isUploading && (
         <div className="flex flex-col items-center py-12 text-center">
           <FileText className="w-10 h-10 text-muted-foreground opacity-30 mb-3" />
           <p className="text-sm text-muted-foreground">
