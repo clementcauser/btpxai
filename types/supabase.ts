@@ -1,3 +1,4 @@
+Connecting to db 5432
 export type Json =
   | string
   | number
@@ -90,89 +91,21 @@ export type Database = {
           },
         ]
       }
-      email_acknowledgments: {
-        Row: {
-          id: string
-          message_id: string
-          thread_id: string
-          sender_email: string
-          client_name: string | null
-          sent_at: string
-        }
-        Insert: {
-          id?: string
-          message_id: string
-          thread_id: string
-          sender_email: string
-          client_name?: string | null
-          sent_at?: string
-        }
-        Update: {
-          id?: string
-          message_id?: string
-          thread_id?: string
-          sender_email?: string
-          client_name?: string | null
-          sent_at?: string
-        }
-        Relationships: []
-      }
-      email_statuses: {
-        Row: {
-          id: string
-          message_id: string
-          thread_id: string
-          status: "a_traiter" | "en_cours" | "repondu" | "archive"
-          category: "demande_devis" | "suivi_commande" | "question" | "autre" | null
-          client_id: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          message_id: string
-          thread_id: string
-          status?: "a_traiter" | "en_cours" | "repondu" | "archive"
-          category?: "demande_devis" | "suivi_commande" | "question" | "autre" | null
-          client_id?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          message_id?: string
-          thread_id?: string
-          status?: "a_traiter" | "en_cours" | "repondu" | "archive"
-          category?: "demande_devis" | "suivi_commande" | "question" | "autre" | null
-          client_id?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "email_statuses_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       app_settings: {
         Row: {
           key: string
-          value: string
           updated_at: string
+          value: string
         }
         Insert: {
           key: string
-          value: string
           updated_at?: string
+          value: string
         }
         Update: {
           key?: string
-          value?: string
           updated_at?: string
+          value?: string
         }
         Relationships: []
       }
@@ -202,6 +135,74 @@ export type Database = {
           phone?: string | null
         }
         Relationships: []
+      }
+      email_acknowledgments: {
+        Row: {
+          client_name: string | null
+          id: string
+          message_id: string
+          sender_email: string
+          sent_at: string
+          thread_id: string
+        }
+        Insert: {
+          client_name?: string | null
+          id?: string
+          message_id: string
+          sender_email: string
+          sent_at?: string
+          thread_id: string
+        }
+        Update: {
+          client_name?: string | null
+          id?: string
+          message_id?: string
+          sender_email?: string
+          sent_at?: string
+          thread_id?: string
+        }
+        Relationships: []
+      }
+      email_statuses: {
+        Row: {
+          category: string | null
+          client_id: string | null
+          created_at: string
+          id: string
+          message_id: string
+          status: string
+          thread_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          message_id: string
+          status?: string
+          thread_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          message_id?: string
+          status?: string
+          thread_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_statuses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gmail_connections: {
         Row: {
@@ -305,25 +306,25 @@ export type Database = {
       }
       quote_reminders: {
         Row: {
+          email_to: string
           id: string
           quote_id: string
-          type: string
           sent_at: string
-          email_to: string
+          type: string
         }
         Insert: {
+          email_to: string
           id?: string
           quote_id: string
-          type: string
           sent_at?: string
-          email_to: string
+          type: string
         }
         Update: {
+          email_to?: string
           id?: string
           quote_id?: string
-          type?: string
           sent_at?: string
-          email_to?: string
+          type?: string
         }
         Relationships: [
           {
@@ -464,6 +465,41 @@ export type Database = {
           },
           {
             foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      terrain_notes: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          id: string
+          project_id: string
+          transcription: string | null
+          user_id: string
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          project_id: string
+          transcription?: string | null
+          user_id: string
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          transcription?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terrain_notes_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
