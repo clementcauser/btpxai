@@ -18,13 +18,8 @@ export default async function TerrainLayout({
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white px-6 py-4">
-        <p className="text-sm text-zinc-500">
-          Interface terrain — {user.email}
-        </p>
-      </header>
-      <main className="p-6">{children}</main>
+    <div className="min-h-screen bg-background text-foreground">
+      {children}
     </div>
   )
 }

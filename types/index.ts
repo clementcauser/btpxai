@@ -161,3 +161,68 @@ export type QuoteReminder = {
   sent_at: string
   email_to: string
 }
+
+// ─── Terrain (ouvrier) types ─────────────────────────────────────────────────
+
+export type TerrainNote = {
+  id: string
+  project_id: string
+  user_id: string
+  transcription: string | null
+  audio_url: string | null
+  created_at: string
+}
+
+export type TerrainPhoto = {
+  id: string
+  project_id: string
+  user_id: string
+  photo_url: string
+  lat: number | null
+  lng: number | null
+  created_at: string
+}
+
+export type MateriauxUrgency = "normal" | "urgent" | "critique"
+export type MateriauxStatus = "pending" | "ordered" | "delivered"
+
+export type MateriauxRequest = {
+  id: string
+  project_id: string
+  user_id: string
+  label: string
+  quantity: string
+  urgency: MateriauxUrgency
+  status: MateriauxStatus
+  created_at: string
+}
+
+export type ProjectStep = {
+  id: string
+  project_id: string
+  label: string
+  order: number
+  completed_at: string | null
+  completed_by: string | null
+}
+
+export type ProblemeUrgency = "faible" | "elevee" | "critique"
+
+export type ProblemeReport = {
+  id: string
+  project_id: string
+  user_id: string
+  urgency: ProblemeUrgency
+  description: string
+  created_at: string
+}
+
+export type ProjectWithClient = {
+  id: string
+  title: string
+  description: string | null
+  status: "planned" | "in_progress" | "completed" | "cancelled"
+  client_id: string
+  created_at: string
+  clients: { id: string; name: string } | null
+}

@@ -38,6 +38,7 @@ jobs:
       GOOGLE_CLIENT_SECRET: fake-google-client-secret-for-ci
       RESEND_API_KEY: re_fake_api_key_for_ci_testing
       NEXT_PUBLIC_APP_URL: http://localhost:3000
+      IS_E2E: "true"
     steps:
       - uses: actions/checkout@v4
 
