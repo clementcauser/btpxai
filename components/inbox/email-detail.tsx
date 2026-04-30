@@ -26,6 +26,7 @@ import type {
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { ClientSummaryPanel } from "./client-summary-panel"
 
 type Client = { id: string; name: string; email: string | null }
 
@@ -452,6 +453,18 @@ export function EmailDetail({
             </div>
           )}
         </div>
+
+        {/* Client AI summary */}
+        {linkedClient && detail && (
+          <ClientSummaryPanel
+            clientId={linkedClient.id}
+            clientName={linkedClient.name}
+            currentEmailSubject={detail.subject}
+            currentEmailSnippet={detail.body.trimStart().startsWith("<")
+              ? stripHtml(detail.body).slice(0, 300)
+              : detail.body.slice(0, 300)}
+          />
+        )}
       </div>
 
       {/* Body */}
