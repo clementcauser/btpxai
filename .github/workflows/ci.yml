@@ -39,6 +39,7 @@ jobs:
       RESEND_API_KEY: re_fake_api_key_for_ci_testing
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       IS_E2E: "true"
+      OPENAI_API_KEY: fake-openai-api-key-for-ci-testing
     steps:
       - uses: actions/checkout@v4
 

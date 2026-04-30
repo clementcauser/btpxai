@@ -232,7 +232,7 @@ describe("Interface terrain (ouvrier) — viewport 375px", () => {
     })
 
     it("affiche l'onglet Notes et le bouton d'enregistrement", () => {
-      cy.get("[data-testid='tab-notes']").click()
+      // Notes est l'onglet actif par défaut, pas besoin de cliquer
       cy.get("[data-testid='record-button']").should("be.visible")
       cy.get("[data-testid='record-button']").invoke("outerHeight").should("be.gte", 48)
     })
@@ -254,13 +254,11 @@ describe("Interface terrain (ouvrier) — viewport 375px", () => {
         },
       }).as("getNotesWithData")
 
-      cy.get("[data-testid='tab-notes']").click()
       cy.wait("@getNotesWithData")
       cy.contains("Note existante de test").should("be.visible")
     })
 
     it("simule un POST de note et vérifie la réponse API", () => {
-      cy.get("[data-testid='tab-notes']").click()
 
       cy.window().then((win) => {
         const fd = new win.FormData()

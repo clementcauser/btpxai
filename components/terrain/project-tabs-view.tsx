@@ -91,7 +91,7 @@ export default function ProjectTabsView({
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto" style={{ paddingBottom: "80px" }}>
+      <main className="flex-1 overflow-y-auto isolate" style={{ paddingBottom: "80px" }}>
         {activeTab === "notes" && <NotesTab projectId={project.id} />}
         {activeTab === "photos" && <PhotosTab projectId={project.id} />}
         {activeTab === "materiaux" && <MateriauxTab projectId={project.id} />}
