@@ -3,7 +3,7 @@
 create table if not exists public.terrain_notes (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references public.projects(id) on delete cascade,
-  user_id uuid not null references auth.users(id),
+  user_id uuid not null references auth.users(id) on delete cascade,
   transcription text,
   audio_url text,
   created_at timestamptz not null default now()
@@ -18,7 +18,7 @@ create policy "ouvrier_insert_own_notes"
   to authenticated
   with check (
     auth.uid() = user_id
-    and (auth.jwt() ->> 'user_metadata')::jsonb ->> 'role' = 'ouvrier'
+    and auth.jwt() -> 'user_metadata' ->> 'role' = 'ouvrier'
   );
 
 create policy "ouvrier_select_own_notes"
@@ -27,7 +27,7 @@ create policy "ouvrier_select_own_notes"
   to authenticated
   using (
     auth.uid() = user_id
-    and (auth.jwt() ->> 'user_metadata')::jsonb ->> 'role' = 'ouvrier'
+    and auth.jwt() -> 'user_metadata' ->> 'role' = 'ouvrier'
   );
 
 -- bureau + admin: read all
@@ -36,5 +36,5 @@ create policy "bureau_admin_select_notes"
   for select
   to authenticated
   using (
-    (auth.jwt() ->> 'user_metadata')::jsonb ->> 'role' in ('bureau', 'admin')
+    auth.jwt() -> 'user_metadata' ->> 'role' in ('bureau', 'admin')
   );
