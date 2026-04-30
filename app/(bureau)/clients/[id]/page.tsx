@@ -10,9 +10,12 @@ import {
   FileText,
   FolderOpen,
   ExternalLink,
+  Mic,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getClientWithQuotes } from "@/lib/clients"
+import { getTerrainNotes } from "@/lib/terrain-notes"
+import type { TerrainNote } from "@/types"
 import { buttonVariants } from "@/components/ui/button"
 import { ClientDetailActions } from "@/components/clients/client-detail-actions"
 import { cn } from "@/lib/utils"
@@ -93,6 +96,19 @@ export default async function ClientDetailPage({
   const { id } = await params
   const supabase = await createClient()
   const client = await getClientWithQuotes(supabase, id).catch(() => notFound())
+
+  const notesPerProject: Record<string, TerrainNote[]> = Object.fromEntries(
+    await Promise.all(
+      client.projects.map(async (p) => {
+        try {
+          const notes = await getTerrainNotes(supabase, p.id)
+          return [p.id, notes] as const
+        } catch {
+          return [p.id, []] as const
+        }
+      })
+    )
+  )
 
   const allQuotes = client.projects.flatMap((p) =>
     p.quotes.map((q) => ({ ...q, projectTitle: p.title, projectId: p.id }))
@@ -337,6 +353,46 @@ export default async function ClientDetailPage({
                     </tbody>
                   </table>
                 )}
+
+                {/* Terrain notes */}
+                {(() => {
+                  const notes = notesPerProject[project.id] ?? []
+                  if (notes.length === 0) return null
+                  return (
+                    <div className="border-t border-border/40 px-4 py-3 space-y-2">
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground flex items-center gap-1.5">
+                        <Mic className="size-3" />
+                        Notes vocales ({notes.length})
+                      </p>
+                      {notes.slice(0, 3).map((note) => (
+                        <div key={note.id} className="bg-secondary/30 rounded-sm px-3 py-2 space-y-1">
+                          <p className="text-xs text-foreground leading-relaxed">
+                            {note.transcription ?? (
+                              <span className="italic text-muted-foreground">Audio uniquement</span>
+                            )}
+                          </p>
+                          {note.audio_url && (
+                            <audio controls src={note.audio_url} className="w-full h-7 mt-1" />
+                          )}
+                          <p className="text-[10px] text-muted-foreground">
+                            {new Date(note.created_at).toLocaleString("fr-FR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      ))}
+                      {notes.length > 3 && (
+                        <p className="text-[10px] text-muted-foreground italic px-1">
+                          +{notes.length - 3} note{notes.length - 3 > 1 ? "s" : ""} supplémentaire{notes.length - 3 > 1 ? "s" : ""}
+                        </p>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
             ))}
           </div>
