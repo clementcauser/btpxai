@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser } from "@/lib/supabase/server"
 import { classifyEmail } from "@/lib/agents/email"
+import { saveEmailCategory } from "@/lib/email-statuses"
 
 export const maxDuration = 30
 
 const classifySchema = z.object({
   subject: z.string(),
   body: z.string().min(1, "Corps du message requis"),
+  messageId: z.string().optional(),
+  threadId: z.string().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -33,6 +36,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await classifyEmail(parsed.data.subject, parsed.data.body, req.signal)
+
+    if (parsed.data.messageId && parsed.data.threadId) {
+      saveEmailCategory(parsed.data.messageId, parsed.data.threadId, result.category).catch(
+        (err) => console.error("Failed to persist email category:", err)
+      )
+    }
+
     return NextResponse.json(result)
   } catch (err) {
     const isTimeout =

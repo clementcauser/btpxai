@@ -162,7 +162,12 @@ export function EmailDetail({
     fetch("/api/agents/email/classify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subject: detail.subject, body: plainBody }),
+      body: JSON.stringify({
+        subject: detail.subject,
+        body: plainBody,
+        messageId: detail.id,
+        threadId: detail.threadId,
+      }),
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: EmailClassification | null) => {
