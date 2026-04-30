@@ -139,29 +139,16 @@ describe("Alertes terrain — bouton d'alerte rapide", () => {
   })
 
   // ─── Bureau /alertes page ─────────────────────────────────────────────────────
+  //
+  // La page /alertes est un Server Component qui fetch directement via supabaseService.
+  // cy.intercept ne peut pas intercepter les appels server-side. À la place, la page
+  // détecte le cookie cypress-test-user=bureau et retourne une fixture identique ci-dessous.
 
   describe("Bureau — page /alertes", () => {
-    const ALERTE_FIXTURE = {
-      id: "alerte-bureau-1",
-      project_id: "test-project-id",
-      user_id: "test-user-id",
-      urgency: "critique",
-      description: "Fuite de gaz détectée sur le chantier",
-      photo_url: null,
-      status: "ouvert",
-      handled_by: null,
-      handled_at: null,
-      resolved_at: null,
-      created_at: new Date().toISOString(),
-      projects: { id: "test-project-id", title: "Portail Dumont" },
-    }
+    // Doit rester synchronisée avec CYPRESS_FIXTURE dans app/(bureau)/alertes/page.tsx
+    const ALERTE_ID = "alerte-bureau-1"
 
     beforeEach(() => {
-      cy.intercept("GET", "/api/terrain/alertes", {
-        statusCode: 200,
-        body: { alertes: [ALERTE_FIXTURE] },
-      }).as("getAlertes")
-
       cy.loginAsBureau()
     })
 
@@ -180,14 +167,26 @@ describe("Alertes terrain — bouton d'alerte rapide", () => {
       cy.intercept("PATCH", "/api/terrain/alertes/*", {
         statusCode: 200,
         body: {
-          alerte: { ...ALERTE_FIXTURE, status: "pris_en_charge", handled_at: new Date().toISOString() },
+          alerte: {
+            id: ALERTE_ID,
+            project_id: "test-project-id",
+            user_id: "test-user-id",
+            urgency: "critique",
+            description: "Fuite de gaz détectée sur le chantier",
+            photo_url: null,
+            status: "pris_en_charge",
+            handled_by: "test-bureau-id",
+            handled_at: new Date().toISOString(),
+            resolved_at: null,
+            created_at: new Date().toISOString(),
+          },
         },
       }).as("patchAlerte")
 
       cy.visit("/alertes")
-      cy.get(`[data-testid='action-alerte-${ALERTE_FIXTURE.id}']`).click()
+      cy.get(`[data-testid='action-alerte-${ALERTE_ID}']`).click()
       cy.wait("@patchAlerte")
-      cy.get(`[data-testid='alerte-status-${ALERTE_FIXTURE.id}']`).should(
+      cy.get(`[data-testid='alerte-status-${ALERTE_ID}']`).should(
         "contain.text",
         "Pris en charge"
       )
@@ -199,7 +198,7 @@ describe("Alertes terrain — bouton d'alerte rapide", () => {
       cy.get("[data-testid='alerte-card']").should("have.length.gte", 1)
     })
 
-    it("le filtre 'Résolues' affiche 0 alerte (fixture ouverte)", () => {
+    it("le filtre 'Résolues' affiche 0 alerte (fixture ouvert)", () => {
       cy.visit("/alertes")
       cy.get("[data-testid='filter-resolu']").click()
       cy.get("[data-testid='alerte-card']").should("have.length", 0)
