@@ -4,6 +4,7 @@ import { HardHat, ChevronRight, Circle } from "lucide-react"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import type { ProjectWithClient } from "@/types"
+import QuickAlertButton from "@/components/terrain/quick-alert-button"
 
 async function isE2ETestRequest(): Promise<boolean> {
   if (process.env.NODE_ENV === "production" && process.env.IS_E2E !== "true") return false
@@ -95,7 +96,8 @@ export default async function TerrainHomePage() {
         )}
       </main>
 
-      <footer className="px-4 pb-safe-bottom py-3 border-t border-border">
+      <footer className="px-4 pb-safe-bottom pt-3 pb-4 border-t border-border space-y-3">
+        <QuickAlertButton />
         <p className="text-center text-[11px] text-muted-foreground">
           {user?.email}
         </p>

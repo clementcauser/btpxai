@@ -201,6 +201,26 @@ export type ProjectStep = Tables<"project_steps">
 
 export type ProblemeUrgency = "faible" | "elevee" | "critique"
 
+export type AlerteStatus = "ouvert" | "pris_en_charge" | "resolu"
+
+export type AlerteTerrain = {
+  id: string
+  project_id: string | null
+  user_id: string
+  urgency: ProblemeUrgency
+  description: string
+  photo_url: string | null
+  status: AlerteStatus
+  handled_by: string | null
+  handled_at: string | null
+  resolved_at: string | null
+  created_at: string
+}
+
+export type AlerteTerrainWithProject = AlerteTerrain & {
+  projects: { id: string; title: string } | null
+}
+
 export type ProblemeReport = {
   id: string
   project_id: string

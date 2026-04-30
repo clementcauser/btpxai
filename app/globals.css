@@ -157,3 +157,23 @@
   from { transform: rotate(var(--spark-start)) translateX(36px); }
   to   { transform: rotate(var(--spark-end)) translateX(36px); }
 }
+
+@keyframes alertPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 oklch(0.62 0.22 25 / 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 10px oklch(0.62 0.22 25 / 0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

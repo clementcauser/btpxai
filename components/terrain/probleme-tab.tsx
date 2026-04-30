@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { AlertTriangle, Send, RotateCcw } from "lucide-react"
+import { useState, useRef } from "react"
+import { AlertTriangle, Send, RotateCcw, Camera, X } from "lucide-react"
+import { toast } from "sonner"
 import type { ProblemeUrgency } from "@/types"
 
 type UrgencyOption = {
@@ -44,26 +45,52 @@ const URGENCY_OPTIONS: UrgencyOption[] = [
   },
 ]
 
-export default function ProblemeTab({ projectId: _projectId }: { projectId: string }) {
+export default function ProblemeTab({ projectId }: { projectId: string }) {
   const [urgency, setUrgency] = useState<ProblemeUrgency | null>(null)
   const [description, setDescription] = useState("")
+  const [photo, setPhoto] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const canSubmit = urgency !== null && description.trim().length > 0
+
+  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhoto(file)
+    setPhotoPreview(URL.createObjectURL(file))
+  }
 
   const handleSubmit = async () => {
     if (!canSubmit || isSubmitting) return
     setIsSubmitting(true)
-    await new Promise((r) => setTimeout(r, 700))
-    setSubmitted(true)
-    setIsSubmitting(false)
+
+    try {
+      const fd = new FormData()
+      fd.append("project_id", projectId)
+      fd.append("urgency", urgency!)
+      fd.append("description", description.trim())
+      if (photo) fd.append("photo", photo)
+
+      const res = await fetch("/api/terrain/alertes", { method: "POST", body: fd })
+      if (!res.ok) throw new Error("Erreur serveur")
+
+      setSubmitted(true)
+    } catch {
+      toast.error("Impossible d'envoyer l'alerte. Réessayez.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleReset = () => {
     setSubmitted(false)
     setUrgency(null)
     setDescription("")
+    setPhoto(null)
+    setPhotoPreview(null)
   }
 
   if (submitted) {
@@ -131,6 +158,7 @@ export default function ProblemeTab({ projectId: _projectId }: { projectId: stri
         </h2>
       </div>
 
+      {/* Urgency selector */}
       <div className="space-y-2">
         <p
           className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
@@ -178,6 +206,7 @@ export default function ProblemeTab({ projectId: _projectId }: { projectId: stri
         </div>
       </div>
 
+      {/* Description */}
       <div className="space-y-2">
         <p
           className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
@@ -195,6 +224,62 @@ export default function ProblemeTab({ projectId: _projectId }: { projectId: stri
         />
       </div>
 
+      {/* Photo optionnelle */}
+      <div className="space-y-2">
+        <p
+          className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
+          style={{ fontFamily: "var(--font-barlow)" }}
+        >
+          Photo (optionnel)
+        </p>
+        {photoPreview ? (
+          <div className="relative rounded-sm overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={photoPreview}
+              alt="Aperçu du problème"
+              className="w-full h-40 object-cover"
+            />
+            <button
+              onClick={() => { setPhoto(null); setPhotoPreview(null) }}
+              className="absolute top-2 right-2 flex items-center justify-center rounded-sm"
+              style={{ width: "32px", height: "32px", background: "oklch(0.15 0.008 258 / 0.85)" }}
+              aria-label="Supprimer la photo"
+            >
+              <X className="w-4 h-4 text-white" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="w-full flex items-center justify-center gap-2 rounded-sm border border-dashed transition-colors active:scale-[0.98]"
+            style={{
+              height: "56px",
+              borderColor: "oklch(0.29 0.012 258)",
+              color: "oklch(0.55 0.008 258)",
+            }}
+          >
+            <Camera className="w-5 h-5" />
+            <span
+              className="text-sm font-bold uppercase tracking-wider"
+              style={{ fontFamily: "var(--font-barlow)" }}
+            >
+              Ajouter une photo
+            </span>
+          </button>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handlePhoto}
+          className="hidden"
+          data-testid="probleme-photo-input"
+        />
+      </div>
+
+      {/* Submit */}
       <button
         onClick={handleSubmit}
         disabled={!canSubmit || isSubmitting}

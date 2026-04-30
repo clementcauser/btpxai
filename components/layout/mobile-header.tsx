@@ -8,9 +8,11 @@ import { AppSidebar } from "./sidebar"
 export function MobileHeader({
   email,
   role,
+  alertBadge = 0,
 }: {
   email: string
   role: "admin" | "bureau" | "ouvrier"
+  alertBadge?: number
 }) {
   const [open, setOpen] = useState(false)
 
@@ -53,7 +55,7 @@ export function MobileHeader({
           >
             <X className="size-4" />
           </Button>
-          <AppSidebar email={email} role={role} />
+          <AppSidebar email={email} role={role} alertBadge={alertBadge} />
         </div>
       </div>
     </>
