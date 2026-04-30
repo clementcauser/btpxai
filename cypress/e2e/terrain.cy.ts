@@ -43,7 +43,19 @@ describe("Interface terrain (ouvrier) — viewport 375px", () => {
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+  const STEPS_FIXTURE = [
+    { id: "step-id-1", project_id: TEST_PROJECT_ID, label: "Préparation du chantier", order: 1, completed_at: new Date(Date.now() - 86400000).toISOString(), completed_by: null },
+    { id: "step-id-2", project_id: TEST_PROJECT_ID, label: "Fondations & ancrage", order: 2, completed_at: null, completed_by: null },
+    { id: "step-id-3", project_id: TEST_PROJECT_ID, label: "Structure métallique", order: 3, completed_at: null, completed_by: null },
+    { id: "step-id-4", project_id: TEST_PROJECT_ID, label: "Soudures & assemblage", order: 4, completed_at: null, completed_by: null },
+    { id: "step-id-5", project_id: TEST_PROJECT_ID, label: "Finitions & peinture", order: 5, completed_at: null, completed_by: null },
+  ]
+
   const visitProject = () => {
+    cy.intercept("GET", "/api/project-steps*", {
+      statusCode: 200,
+      body: { steps: STEPS_FIXTURE },
+    }).as("getSteps")
     cy.loginAsOuvrier()
     cy.visit(`/terrain/${TEST_PROJECT_ID}`)
   }
@@ -150,6 +162,10 @@ describe("Interface terrain (ouvrier) — viewport 375px", () => {
 
   describe("Onglet Avancement", () => {
     beforeEach(() => {
+      cy.intercept("PATCH", "/api/project-steps/*", {
+        statusCode: 200,
+        body: { step: { ...STEPS_FIXTURE[1], completed_at: new Date().toISOString() } },
+      }).as("patchStep")
       visitProject()
       cy.get("[data-testid='tab-avancement']").click()
     })

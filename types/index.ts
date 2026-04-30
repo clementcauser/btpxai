@@ -197,14 +197,7 @@ export type MateriauxRequest = {
   created_at: string
 }
 
-export type ProjectStep = {
-  id: string
-  project_id: string
-  label: string
-  order: number
-  completed_at: string | null
-  completed_by: string | null
-}
+export type ProjectStep = Tables<"project_steps">
 
 export type ProblemeUrgency = "faible" | "elevee" | "critique"
 
