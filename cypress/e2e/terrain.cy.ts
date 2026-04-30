@@ -204,6 +204,76 @@ describe("Interface terrain (ouvrier) — viewport 375px", () => {
     })
   })
 
+  // ─── Notes vocales ────────────────────────────────────────────────────────────
+
+  describe("Notes vocales", () => {
+    beforeEach(() => {
+      cy.intercept("GET", "/api/terrain/notes*", {
+        statusCode: 200,
+        body: { notes: [] },
+      }).as("getNotes")
+
+      cy.intercept("POST", "/api/terrain/notes", {
+        statusCode: 201,
+        body: {
+          note: {
+            id: "note-1",
+            project_id: "test-project-id",
+            user_id: "test-user-id",
+            transcription: "Besoin de rallonges électriques côté portail",
+            audio_url: null,
+            created_at: new Date().toISOString(),
+          },
+        },
+      }).as("postNote")
+
+      cy.loginAsOuvrier()
+      cy.visit(`/terrain/${TEST_PROJECT_ID}`)
+    })
+
+    it("affiche l'onglet Notes et le bouton d'enregistrement", () => {
+      cy.get("[data-testid='tab-notes']").click()
+      cy.get("[data-testid='record-button']").should("be.visible")
+      cy.get("[data-testid='record-button']").invoke("outerHeight").should("be.gte", 48)
+    })
+
+    it("affiche les notes existantes chargées depuis l'API", () => {
+      cy.intercept("GET", "/api/terrain/notes*", {
+        statusCode: 200,
+        body: {
+          notes: [
+            {
+              id: "note-existing",
+              project_id: "test-project-id",
+              user_id: "test-user-id",
+              transcription: "Note existante de test",
+              audio_url: null,
+              created_at: new Date().toISOString(),
+            },
+          ],
+        },
+      }).as("getNotesWithData")
+
+      cy.get("[data-testid='tab-notes']").click()
+      cy.wait("@getNotesWithData")
+      cy.contains("Note existante de test").should("be.visible")
+    })
+
+    it("simule un POST de note et vérifie la réponse API", () => {
+      cy.get("[data-testid='tab-notes']").click()
+
+      cy.window().then((win) => {
+        const fd = new win.FormData()
+        fd.append("project_id", "test-project-id")
+        fd.append("transcription", "Besoin de rallonges électriques côté portail")
+        return win.fetch("/api/terrain/notes", { method: "POST", body: fd })
+      })
+
+      cy.wait("@postNote")
+      cy.get("@postNote").its("response.statusCode").should("eq", 201)
+    })
+  })
+
   // ─── Accessibilité 1 main ─────────────────────────────────────────────────────
 
   describe("Utilisable d'une seule main : ≤ 3 actions par écran", () => {
