@@ -222,7 +222,7 @@ export default function AvancementTab({ projectId }: { projectId: string }) {
               key={step.id}
               onClick={() => toggleStep(step)}
               disabled={isToggling}
-              data-testid={`step-${step.id}`}
+              data-testid={`step-${step.order}`}
               className="w-full flex items-start gap-4 rounded-sm border text-left active:scale-[0.97] transition-all disabled:opacity-60"
               style={{
                 minHeight: "56px",
