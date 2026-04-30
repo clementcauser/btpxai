@@ -123,6 +123,7 @@ export type Database = {
           message_id: string
           thread_id: string
           status: "a_traiter" | "en_cours" | "repondu" | "archive"
+          category: "demande_devis" | "suivi_commande" | "question" | "autre" | null
           client_id: string | null
           created_at: string
           updated_at: string
@@ -132,6 +133,7 @@ export type Database = {
           message_id: string
           thread_id: string
           status?: "a_traiter" | "en_cours" | "repondu" | "archive"
+          category?: "demande_devis" | "suivi_commande" | "question" | "autre" | null
           client_id?: string | null
           created_at?: string
           updated_at?: string
@@ -141,6 +143,7 @@ export type Database = {
           message_id?: string
           thread_id?: string
           status?: "a_traiter" | "en_cours" | "repondu" | "archive"
+          category?: "demande_devis" | "suivi_commande" | "question" | "autre" | null
           client_id?: string | null
           created_at?: string
           updated_at?: string

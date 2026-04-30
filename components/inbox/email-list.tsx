@@ -113,7 +113,12 @@ function parseSenderName(from: string): { name: string; address: string } {
 export function EmailList({ emails, initialStatuses, clients }: Props) {
   const [statuses, setStatuses] =
     useState<Record<string, EmailStatusRecord>>(initialStatuses)
-  const [classifications, setClassifications] = useState<Record<string, EmailCategory>>({})
+  const [classifications, setClassifications] = useState<Record<string, EmailCategory>>(() =>
+    Object.entries(initialStatuses).reduce<Record<string, EmailCategory>>(
+      (acc, [id, r]) => (r.category ? { ...acc, [id]: r.category } : acc),
+      {}
+    )
+  )
   const [selectedId, setSelectedId] = useState<string | null>(
     emails[0]?.id ?? null
   )
@@ -148,6 +153,7 @@ export function EmailList({ emails, initialStatuses, clients }: Props) {
         message_id: email.id,
         thread_id: email.threadId,
         status,
+        category: statuses[email.id]?.category ?? null,
         client_id: clientId !== undefined ? clientId : (statuses[email.id]?.client_id ?? null),
         created_at: statuses[email.id]?.created_at ?? new Date().toISOString(),
         updated_at: new Date().toISOString(),

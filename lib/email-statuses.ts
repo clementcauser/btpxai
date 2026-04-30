@@ -1,5 +1,5 @@
 import { supabaseService } from "@/lib/supabase/service"
-import type { EmailStatus, EmailStatusRecord, LinkedClient } from "@/types"
+import type { EmailCategory, EmailStatus, EmailStatusRecord, LinkedClient } from "@/types"
 
 export async function getEmailStatuses(
   messageIds: string[]
@@ -39,6 +39,18 @@ export async function upsertEmailStatus(
 
   if (error) throw error
   return data as EmailStatusRecord
+}
+
+export async function saveEmailCategory(
+  messageId: string,
+  threadId: string,
+  category: EmailCategory
+): Promise<void> {
+  const { error } = await supabaseService
+    .from("email_statuses")
+    .upsert({ message_id: messageId, thread_id: threadId, category }, { onConflict: "message_id" })
+
+  if (error) throw error
 }
 
 export async function findClientByEmailAddress(

@@ -96,6 +96,7 @@ export type EmailStatusRecord = {
   message_id: string
   thread_id: string
   status: EmailStatus
+  category: EmailCategory | null
   client_id: string | null
   created_at: string
   updated_at: string
