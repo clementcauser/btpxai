@@ -241,7 +241,7 @@ export default function PhotosTab({ projectId }: { projectId: string }) {
 
       {!isLoading && photos.length === 0 && (
         <div className="flex flex-col items-center py-12 text-center">
-          <ImageOff className="w-10 h-10 text-muted-foreground opacity-30 mb-3" />
+          <ImageOff className="w-10 h-10 text-muted-foreground opacity-30 mb-3 pointer-events-none" />
           <p className="text-sm text-muted-foreground">
             Aucune photo pour ce chantier
           </p>

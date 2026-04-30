@@ -277,7 +277,7 @@ export default function NotesTab({ projectId }: { projectId: string }) {
 
       {notes.length === 0 && !isRecording && !isUploading && (
         <div className="flex flex-col items-center py-12 text-center">
-          <FileText className="w-10 h-10 text-muted-foreground opacity-30 mb-3" />
+          <FileText className="w-10 h-10 text-muted-foreground opacity-30 mb-3 pointer-events-none" />
           <p className="text-sm text-muted-foreground">
             Aucune note pour ce chantier
           </p>
