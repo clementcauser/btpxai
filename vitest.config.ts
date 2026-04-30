@@ -15,6 +15,7 @@ export default defineConfig({
       SUPABASE_SERVICE_ROLE_KEY:
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0",
       ANTHROPIC_API_KEY: "test-anthropic-key",
+      OPENAI_API_KEY: "test-openai-key",
       GOOGLE_CLIENT_ID: "test-google-client-id",
       GOOGLE_CLIENT_SECRET: "test-google-client-secret",
       RESEND_API_KEY: "test-resend-key",
