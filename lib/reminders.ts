@@ -1,5 +1,5 @@
 import { supabaseService } from "@/lib/supabase/service"
-import type { ReminderType, QuoteReminder, QuoteWithContext } from "@/types"
+import type { ReminderType, QuoteReminder, QuoteWithContext, QuoteStatus } from "@/types"
 
 const REMINDER_DAYS: Record<ReminderType, number> = {
   quote_j7: 7,
@@ -7,7 +7,7 @@ const REMINDER_DAYS: Record<ReminderType, number> = {
   payment: 7,
 }
 
-const REMINDER_STATUS: Record<ReminderType, string> = {
+const REMINDER_STATUS: Record<ReminderType, QuoteStatus> = {
   quote_j7: "sent",
   quote_j14: "sent",
   payment: "accepted",
