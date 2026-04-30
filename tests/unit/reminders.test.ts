@@ -3,7 +3,7 @@ import type { ReminderType, QuoteWithContext } from "@/types"
 
 // ─── supabaseService mock ──────────────────────────────────────────────────
 
-const mockFrom = vi.fn()
+const mockFrom = vi.hoisted(() => vi.fn())
 vi.mock("@/lib/supabase/service", () => ({
   supabaseService: { from: mockFrom },
 }))
