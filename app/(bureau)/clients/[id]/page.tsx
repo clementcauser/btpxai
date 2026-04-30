@@ -11,11 +11,13 @@ import {
   FolderOpen,
   ExternalLink,
   Mic,
+  Camera,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getClientWithQuotes } from "@/lib/clients"
 import { getTerrainNotes } from "@/lib/terrain-notes"
-import type { TerrainNote } from "@/types"
+import { getTerrainPhotos } from "@/lib/terrain-photos"
+import type { TerrainNote, TerrainPhoto } from "@/types"
 import { buttonVariants } from "@/components/ui/button"
 import { ClientDetailActions } from "@/components/clients/client-detail-actions"
 import { cn } from "@/lib/utils"
@@ -97,18 +99,32 @@ export default async function ClientDetailPage({
   const supabase = await createClient()
   const client = await getClientWithQuotes(supabase, id).catch(() => notFound())
 
-  const notesPerProject: Record<string, TerrainNote[]> = Object.fromEntries(
-    await Promise.all(
-      client.projects.map(async (p) => {
-        try {
-          const notes = await getTerrainNotes(supabase, p.id)
-          return [p.id, notes] as const
-        } catch {
-          return [p.id, []] as const
-        }
-      })
-    )
-  )
+  const [notesPerProject, photosPerProject] = await Promise.all([
+    Object.fromEntries(
+      await Promise.all(
+        client.projects.map(async (p) => {
+          try {
+            const notes = await getTerrainNotes(supabase, p.id)
+            return [p.id, notes] as const
+          } catch {
+            return [p.id, [] as TerrainNote[]] as const
+          }
+        })
+      )
+    ) as Record<string, TerrainNote[]>,
+    Object.fromEntries(
+      await Promise.all(
+        client.projects.map(async (p) => {
+          try {
+            const photos = await getTerrainPhotos(supabase, p.id)
+            return [p.id, photos] as const
+          } catch {
+            return [p.id, [] as TerrainPhoto[]] as const
+          }
+        })
+      )
+    ) as Record<string, TerrainPhoto[]>,
+  ])
 
   const allQuotes = client.projects.flatMap((p) =>
     p.quotes.map((q) => ({ ...q, projectTitle: p.title, projectId: p.id }))
@@ -388,6 +404,56 @@ export default async function ClientDetailPage({
                       {notes.length > 3 && (
                         <p className="text-[10px] text-muted-foreground italic px-1">
                           +{notes.length - 3} note{notes.length - 3 > 1 ? "s" : ""} supplémentaire{notes.length - 3 > 1 ? "s" : ""}
+                        </p>
+                      )}
+                    </div>
+                  )
+                })()}
+
+                {/* Terrain photos */}
+                {(() => {
+                  const photos = photosPerProject[project.id] ?? []
+                  if (photos.length === 0) return null
+                  return (
+                    <div className="border-t border-border/40 px-4 py-3 space-y-2">
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground flex items-center gap-1.5">
+                        <Camera className="size-3" />
+                        Photos chantier ({photos.length})
+                      </p>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                        {photos.slice(0, 8).map((photo) => (
+                          <a
+                            key={photo.id}
+                            href={photo.photo_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group relative aspect-square rounded-sm overflow-hidden bg-muted border border-border/60 block"
+                            title={new Date(photo.created_at).toLocaleString("fr-FR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={photo.photo_url}
+                              alt={`Photo du ${new Date(photo.created_at).toLocaleDateString("fr-FR")}`}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                            />
+                            {photo.lat && photo.lng && (
+                              <span className="absolute bottom-0.5 right-0.5 bg-black/60 rounded-sm p-0.5">
+                                <MapPin className="size-2 text-white/80" />
+                              </span>
+                            )}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                          </a>
+                        ))}
+                      </div>
+                      {photos.length > 8 && (
+                        <p className="text-[10px] text-muted-foreground italic px-1">
+                          +{photos.length - 8} photo{photos.length - 8 > 1 ? "s" : ""} supplémentaire{photos.length - 8 > 1 ? "s" : ""}
                         </p>
                       )}
                     </div>
