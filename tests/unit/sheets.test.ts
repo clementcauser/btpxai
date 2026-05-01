@@ -6,14 +6,6 @@ vi.mock("@/lib/supabase/service", () => ({
   },
 }))
 
-vi.mock("@/lib/env", () => ({
-  env: {
-    GOOGLE_CLIENT_ID: "test-client-id",
-    GOOGLE_CLIENT_SECRET: "test-client-secret",
-    GOOGLE_SHEETS_SPREADSHEET_ID: "test-spreadsheet-id",
-  },
-}))
-
 const mockFetch = vi.fn()
 vi.stubGlobal("fetch", mockFetch)
 
