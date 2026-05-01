@@ -2,21 +2,31 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { getUser, getUserRole } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
-import { getOpenAlertesCount } from "@/lib/terrain-alertes"
+import { getDashboardMetrics } from "@/lib/dashboard"
+import { DashboardAutoRefresh } from "@/components/dashboard/auto-refresh"
 import {
   FileText,
   Users,
   Mail,
-  Clock,
-  TrendingUp,
-  Wrench,
+  Package,
   AlertTriangle,
+  Euro,
+  HardHat,
+  Clock,
+  ArrowRight,
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 export const metadata: Metadata = {
   title: "Tableau de bord — BTP×AI",
+}
+
+function formatRevenue(amount: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(amount)
 }
 
 const quickActions = [
@@ -25,21 +35,18 @@ const quickActions = [
     description: "Brief client → devis en quelques secondes",
     href: "/devis/nouveau",
     icon: FileText,
-    accent: "primary",
   },
   {
     label: "Voir la messagerie",
     description: "Emails classifiés automatiquement",
     href: "/inbox",
     icon: Mail,
-    accent: "violet",
   },
   {
     label: "Nouveau client",
     description: "Ajouter un contact au répertoire",
     href: "/clients/nouveau",
     icon: Users,
-    accent: "sky",
   },
 ]
 
@@ -47,11 +54,19 @@ export default async function DashboardPage() {
   const user = await getUser()
   const role = getUserRole(user) ?? "bureau"
 
-  let openAlertes = 0
+  let metrics = {
+    pendingQuotes: 0,
+    activeProjects: 0,
+    unprocessedEmails: 0,
+    weeklyRevenue: 0,
+    pendingMaterials: 0,
+    openAlerts: 0,
+  }
+
   try {
-    openAlertes = await getOpenAlertesCount(supabaseService)
+    metrics = await getDashboardMetrics(supabaseService)
   } catch {
-    openAlertes = 0
+    // Fail gracefully — show zeros
   }
 
   const greeting = (() => {
@@ -61,78 +76,144 @@ export default async function DashboardPage() {
     return "Bonsoir"
   })()
 
-  const stats = [
+  const dateLabel = new Date().toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+
+  type MetricCard = {
+    label: string
+    value: string
+    description: string
+    icon: React.ElementType
+    href?: string
+    linkLabel?: string
+    accentColor: string
+    iconBg: string
+    iconColor: string
+    urgent: boolean
+  }
+
+  const metricCards: MetricCard[] = [
     {
-      label: "Devis en cours",
-      value: "—",
+      label: "Devis en attente",
+      value: String(metrics.pendingQuotes),
+      description: "devis envoyés sans réponse",
       icon: FileText,
-      description: "À envoyer ou en attente",
-      color: "text-primary",
-      bg: "bg-primary/10",
-      href: undefined,
+      href: "/devis",
+      linkLabel: "Voir les devis",
+      accentColor: "oklch(0.69 0.168 47)",
+      iconBg: "oklch(0.69 0.168 47 / 0.12)",
+      iconColor: "oklch(0.69 0.168 47)",
+      urgent: false,
     },
     {
-      label: "Clients actifs",
-      value: "—",
-      icon: Users,
-      description: "Avec chantier en cours",
-      color: "text-sky-400",
-      bg: "bg-sky-400/10",
-      href: undefined,
+      label: "Chantiers actifs",
+      value: String(metrics.activeProjects),
+      description: "projets en cours",
+      icon: HardHat,
+      accentColor: "oklch(0.62 0.12 210)",
+      iconBg: "oklch(0.62 0.12 210 / 0.12)",
+      iconColor: "oklch(0.62 0.12 210)",
+      urgent: false,
     },
     {
-      label: "Messages non lus",
-      value: "—",
+      label: "Emails non traités",
+      value: String(metrics.unprocessedEmails),
+      description: "à traiter dans la messagerie",
       icon: Mail,
-      description: "Dans la messagerie",
-      color: "text-violet-400",
-      bg: "bg-violet-400/10",
-      href: undefined,
+      href: "/inbox",
+      linkLabel: "Ouvrir la messagerie",
+      accentColor: "oklch(0.65 0.15 280)",
+      iconBg: "oklch(0.65 0.15 280 / 0.12)",
+      iconColor: "oklch(0.65 0.15 280)",
+      urgent: false,
+    },
+    {
+      label: "CA de la semaine",
+      value: formatRevenue(metrics.weeklyRevenue),
+      description: "devis acceptés cette semaine",
+      icon: Euro,
+      href: "/devis",
+      linkLabel: "Voir les devis",
+      accentColor: "oklch(0.60 0.14 145)",
+      iconBg: "oklch(0.60 0.14 145 / 0.12)",
+      iconColor: "oklch(0.60 0.14 145)",
+      urgent: false,
+    },
+    {
+      label: "Matériaux en attente",
+      value: String(metrics.pendingMaterials),
+      description: "demandes à traiter",
+      icon: Package,
+      href: "/materiaux",
+      linkLabel: "Voir les demandes",
+      accentColor: "oklch(0.70 0.18 55)",
+      iconBg: "oklch(0.70 0.18 55 / 0.12)",
+      iconColor: "oklch(0.70 0.18 55)",
+      urgent: false,
     },
     {
       label: "Alertes terrain",
-      value: openAlertes > 0 ? String(openAlertes) : "—",
+      value: String(metrics.openAlerts),
+      description:
+        metrics.openAlerts > 0
+          ? "problèmes ouverts ou en cours"
+          : "aucun problème signalé",
       icon: AlertTriangle,
-      description: openAlertes > 0 ? "Signalements en attente" : "Aucun signalement",
-      color: openAlertes > 0 ? "text-red-400" : "text-muted-foreground",
-      bg: openAlertes > 0 ? "bg-red-400/10" : "bg-muted/30",
       href: "/alertes",
-      urgent: openAlertes > 0,
+      linkLabel: "Voir les alertes",
+      accentColor:
+        metrics.openAlerts > 0
+          ? "oklch(0.62 0.22 25)"
+          : "oklch(0.29 0.012 258)",
+      iconBg:
+        metrics.openAlerts > 0
+          ? "oklch(0.62 0.22 25 / 0.12)"
+          : "oklch(0.21 0.01 258)",
+      iconColor:
+        metrics.openAlerts > 0
+          ? "oklch(0.62 0.22 25)"
+          : "oklch(0.58 0.008 258)",
+      urgent: metrics.openAlerts > 0,
     },
   ]
 
   return (
     <div className="space-y-8">
-      {/* Page header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Clock className="size-3.5 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground tracking-wider uppercase">
-              {new Date().toLocaleDateString("fr-FR", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-              })}
-            </span>
-          </div>
-          <h1 className="font-heading text-3xl font-700 tracking-wide uppercase text-foreground">
-            {greeting}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Voici un résumé de l&apos;activité de votre entreprise.
-          </p>
+      <DashboardAutoRefresh />
+
+      {/* Header */}
+      <header>
+        <div className="flex items-center gap-2 mb-2">
+          <Clock className="size-3 text-muted-foreground" />
+          <span className="text-[11px] text-muted-foreground tracking-widest uppercase">
+            {dateLabel}
+          </span>
         </div>
-        <Badge
-          variant="outline"
-          className="shrink-0 text-primary border-primary/40 uppercase tracking-wider text-[10px] px-2 py-1"
-        >
-          {role === "admin" ? "Administrateur" : "Bureau"}
-        </Badge>
-      </div>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="font-heading text-4xl font-700 tracking-wide uppercase leading-none">
+              {greeting}
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Résumé de l&apos;activité de la semaine.
+            </p>
+          </div>
+          <Badge
+            variant="outline"
+            className="shrink-0 border-primary/40 text-primary uppercase tracking-wider text-[10px] px-2 py-1"
+          >
+            {role === "admin" ? "Administrateur" : "Bureau"}
+          </Badge>
+        </div>
+        <div className="mt-4 h-px bg-border" />
+      </header>
 
       {/* Alert banner */}
-      {openAlertes > 0 && (
+      {metrics.openAlerts > 0 && (
         <Link
           href="/alertes"
           className="flex items-center gap-3 rounded-sm px-4 py-3 transition-opacity hover:opacity-90"
@@ -143,118 +224,162 @@ export default async function DashboardPage() {
           data-testid="alert-banner"
         >
           <span
-            className="w-2.5 h-2.5 rounded-full shrink-0"
-            style={{ background: "oklch(0.62 0.22 25)", animation: "alertPulse 2.4s ease infinite" }}
+            className="w-2 h-2 rounded-full shrink-0"
+            style={{
+              background: "oklch(0.62 0.22 25)",
+              animation: "alertPulse 2.4s ease infinite",
+            }}
           />
-          <p className="flex-1 text-sm font-bold" style={{ color: "oklch(0.92 0.2 25)", fontFamily: "var(--font-barlow)" }}>
-            {openAlertes} alerte{openAlertes > 1 ? "s" : ""} terrain en attente de traitement
+          <p
+            className="flex-1 text-sm font-bold"
+            style={{
+              color: "oklch(0.92 0.2 25)",
+              fontFamily: "var(--font-barlow)",
+            }}
+          >
+            {metrics.openAlerts} alerte
+            {metrics.openAlerts > 1 ? "s" : ""} terrain en attente de
+            traitement
           </p>
-          <span className="text-xs uppercase tracking-wider font-bold" style={{ color: "oklch(0.75 0.18 25)", fontFamily: "var(--font-barlow)" }}>
+          <span
+            className="text-xs uppercase tracking-wider font-bold"
+            style={{
+              color: "oklch(0.75 0.18 25)",
+              fontFamily: "var(--font-barlow)",
+            }}
+          >
             Voir →
           </span>
         </Link>
       )}
 
-      {/* Stats grid */}
+      {/* Metric cards */}
       <section>
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="size-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="flex items-center gap-3 mb-5">
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-[0.15em]">
             Indicateurs
           </span>
           <div className="flex-1 h-px bg-border" />
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {stats.map((stat) => {
-            const card = (
-              <Card
-                key={stat.label}
-                className="bg-card border-border hover:border-border/80 transition-colors"
-                style={stat.urgent ? { borderColor: "oklch(0.45 0.18 25)" } : undefined}
+
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+          {metricCards.map((card, i) => {
+            const cardContent = (
+              <div
+                className="relative flex flex-col gap-3 h-full rounded-sm border border-border bg-card p-5 overflow-hidden transition-colors"
+                style={{
+                  borderLeftColor: card.accentColor,
+                  borderLeftWidth: "3px",
+                  animation: "fadeSlideIn 0.35s ease both",
+                  animationDelay: `${i * 0.06}s`,
+                  ...(card.urgent
+                    ? {
+                        boxShadow:
+                          "0 0 0 1px oklch(0.5 0.2 25 / 0.25) inset",
+                      }
+                    : {}),
+                }}
               >
-                <CardHeader className="pb-2 pt-4 px-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {stat.label}
-                    </CardTitle>
-                    <div className={`size-7 rounded-sm ${stat.bg} flex items-center justify-center`}>
-                      <stat.icon className={`size-3.5 ${stat.color}`} />
-                    </div>
+                {/* Label + icon */}
+                <div className="flex items-start justify-between gap-2">
+                  <span
+                    className="text-[10px] font-medium uppercase tracking-[0.1em] leading-tight"
+                    style={{ color: "oklch(0.55 0.008 258)" }}
+                  >
+                    {card.label}
+                  </span>
+                  <div
+                    className="size-7 rounded-sm flex items-center justify-center shrink-0"
+                    style={{ background: card.iconBg }}
+                  >
+                    <card.icon
+                      className="size-3.5"
+                      style={{ color: card.iconColor }}
+                    />
                   </div>
-                </CardHeader>
-                <CardContent className="pb-4 px-4">
-                  <p className="font-heading text-2xl font-700 text-foreground">
-                    {stat.value}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {stat.description}
-                  </p>
-                </CardContent>
-              </Card>
+                </div>
+
+                {/* Value */}
+                <p
+                  className="font-heading font-700 leading-none tracking-tight"
+                  style={{
+                    fontSize:
+                      card.value.length > 8 ? "1.6rem" : "2.25rem",
+                    color: card.urgent
+                      ? card.iconColor
+                      : "oklch(0.92 0.012 78)",
+                  }}
+                >
+                  {card.value}
+                </p>
+
+                {/* Description */}
+                <p
+                  className="text-xs leading-relaxed"
+                  style={{ color: "oklch(0.55 0.008 258)" }}
+                >
+                  {card.description}
+                </p>
+
+                {/* Link */}
+                {card.href && card.linkLabel && (
+                  <div
+                    className="flex items-center gap-1 text-[11px] font-medium mt-auto transition-opacity hover:opacity-70"
+                    style={{ color: card.accentColor }}
+                  >
+                    {card.linkLabel}
+                    <ArrowRight className="size-3" />
+                  </div>
+                )}
+              </div>
             )
 
-            return stat.href ? (
-              <Link key={stat.label} href={stat.href} className="block">
-                {card}
+            return card.href ? (
+              <Link key={card.label} href={card.href} className="block">
+                {cardContent}
               </Link>
-            ) : card
+            ) : (
+              <div key={card.label}>{cardContent}</div>
+            )
           })}
         </div>
       </section>
 
       {/* Quick actions */}
       <section>
-        <div className="flex items-center gap-2 mb-4">
-          <Wrench className="size-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="flex items-center gap-3 mb-5">
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-[0.15em]">
             Actions rapides
           </span>
           <div className="flex-1 h-px bg-border" />
         </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {quickActions.map((action) => (
-            <a
+            <Link
               key={action.label}
               href={action.href}
-              className="group flex items-start gap-3 rounded-sm border border-border bg-card p-4 transition-all hover:border-primary/50 hover:bg-primary/5"
+              className="group flex items-start gap-3 rounded-sm border border-border bg-card p-4 transition-all hover:border-primary/40 hover:bg-primary/5"
             >
-              <div className="size-8 rounded-sm bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                <action.icon className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              <div className="size-8 rounded-sm bg-muted flex items-center justify-center shrink-0 transition-colors group-hover:bg-primary/15">
+                <action.icon className="size-4 text-muted-foreground transition-colors group-hover:text-primary" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                <p className="text-sm font-medium text-foreground transition-colors group-hover:text-primary">
                   {action.label}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {action.description}
                 </p>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </section>
 
-      {/* Empty activity feed */}
-      <section>
-        <div className="flex items-center gap-2 mb-4">
-          <Clock className="size-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Activité récente
-          </span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
-        <div className="rounded-sm border border-border border-dashed bg-card/50 p-12 text-center">
-          <div className="size-12 rounded-sm bg-muted mx-auto mb-3 flex items-center justify-center">
-            <Clock className="size-5 text-muted-foreground/50" />
-          </div>
-          <p className="text-sm font-medium text-muted-foreground">
-            Aucune activité récente
-          </p>
-          <p className="text-xs text-muted-foreground/60 mt-1">
-            Les devis, emails et chantiers apparaîtront ici.
-          </p>
-        </div>
-      </section>
+      <p className="text-[10px] text-muted-foreground/40 text-right tracking-wider uppercase">
+        Données actualisées toutes les 5 minutes
+      </p>
     </div>
   )
 }
