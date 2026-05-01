@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 const schema = z.object({
-  reminder_delay_j7: z.coerce.number().min(1).max(30),
-  reminder_delay_j14: z.coerce.number().min(1).max(60),
+  reminder_delay_j7: z.number().min(1).max(30),
+  reminder_delay_j14: z.number().min(1).max(60),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -120,7 +120,7 @@ export function RemindersSection({ initialSettings }: Props) {
                 max={30}
                 data-testid="reminders-delay-j7"
                 className="font-mono"
-                {...register("reminder_delay_j7")}
+                {...register("reminder_delay_j7", { valueAsNumber: true })}
               />
               {errors.reminder_delay_j7 && (
                 <p className="text-xs text-destructive">{errors.reminder_delay_j7.message}</p>
@@ -137,7 +137,7 @@ export function RemindersSection({ initialSettings }: Props) {
                 max={60}
                 data-testid="reminders-delay-j14"
                 className="font-mono"
-                {...register("reminder_delay_j14")}
+                {...register("reminder_delay_j14", { valueAsNumber: true })}
               />
               {errors.reminder_delay_j14 && (
                 <p className="text-xs text-destructive">{errors.reminder_delay_j14.message}</p>
