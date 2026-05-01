@@ -90,6 +90,56 @@ export type Database = {
           },
         ]
       }
+      alertes_terrain: {
+        Row: {
+          created_at: string
+          description: string
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          photo_url: string | null
+          project_id: string | null
+          resolved_at: string | null
+          status: "ouvert" | "pris_en_charge" | "resolu"
+          urgency: "faible" | "elevee" | "critique"
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          photo_url?: string | null
+          project_id?: string | null
+          resolved_at?: string | null
+          status?: "ouvert" | "pris_en_charge" | "resolu"
+          urgency: "faible" | "elevee" | "critique"
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          photo_url?: string | null
+          project_id?: string | null
+          resolved_at?: string | null
+          status?: "ouvert" | "pris_en_charge" | "resolu"
+          urgency?: "faible" | "elevee" | "critique"
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertes_terrain_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           key: string

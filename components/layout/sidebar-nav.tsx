@@ -10,6 +10,7 @@ import {
   Settings,
   HardHat,
   Package,
+  AlertTriangle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -17,14 +18,17 @@ type NavItem = {
   href: string
   label: string
   icon: React.ComponentType<{ className?: string }>
+  badge?: number
+  isAlert?: boolean
 }
 
-const bureauNav: NavItem[] = [
+const bureauNavBase: Omit<NavItem, "badge">[] = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/devis", label: "Devis", icon: FileText },
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/inbox", label: "Messagerie", icon: Mail },
   { href: "/materiaux", label: "Matériaux", icon: Package },
+  { href: "/alertes", label: "Alertes", icon: AlertTriangle, isAlert: true },
   { href: "/parametres", label: "Paramètres", icon: Settings },
 ]
 
@@ -34,14 +38,16 @@ const terrainNav: NavItem[] = [
 
 type Role = "admin" | "bureau" | "ouvrier"
 
-function getNavItems(role: Role): NavItem[] {
+function getNavItems(role: Role, alertBadge?: number): NavItem[] {
   if (role === "ouvrier") return terrainNav
-  return bureauNav
+  return bureauNavBase.map((item) =>
+    item.href === "/alertes" ? { ...item, badge: alertBadge } : item
+  )
 }
 
-export function SidebarNav({ role }: { role: Role }) {
+export function SidebarNav({ role, alertBadge }: { role: Role; alertBadge?: number }) {
   const pathname = usePathname()
-  const items = getNavItems(role)
+  const items = getNavItems(role, alertBadge)
 
   return (
     <nav className="flex-1 py-4 space-y-0.5">
@@ -51,6 +57,8 @@ export function SidebarNav({ role }: { role: Role }) {
             ? pathname === "/dashboard"
             : pathname.startsWith(item.href)
 
+        const showBadge = item.badge !== undefined && item.badge > 0
+
         return (
           <Link
             key={item.href}
@@ -59,7 +67,9 @@ export function SidebarNav({ role }: { role: Role }) {
               "flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors relative group",
               isActive
                 ? "text-primary bg-primary/10 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-0.5 before:bg-primary"
-                : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                : item.isAlert && showBadge
+                  ? "text-red-400/90 hover:text-red-300 hover:bg-red-950/30"
+                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
             )}
           >
             <item.icon
@@ -67,10 +77,26 @@ export function SidebarNav({ role }: { role: Role }) {
                 "size-4 shrink-0 transition-colors",
                 isActive
                   ? "text-primary"
-                  : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/70"
+                  : item.isAlert && showBadge
+                    ? "text-red-400"
+                    : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/70"
               )}
             />
-            <span className="truncate tracking-wide">{item.label}</span>
+            <span className="truncate tracking-wide flex-1">{item.label}</span>
+
+            {showBadge && (
+              <span
+                className="flex items-center justify-center rounded-full min-w-[18px] h-[18px] px-1 text-[10px] font-bold leading-none"
+                style={{
+                  background: "oklch(0.55 0.22 25)",
+                  color: "white",
+                  animation: "alertPulse 2.4s ease infinite",
+                }}
+                data-testid="alert-badge"
+              >
+                {item.badge! > 99 ? "99+" : item.badge}
+              </span>
+            )}
           </Link>
         )
       })}

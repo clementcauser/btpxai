@@ -1,5 +1,8 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { getUser, getUserRole } from "@/lib/supabase/server"
+import { supabaseService } from "@/lib/supabase/service"
+import { getOpenAlertesCount } from "@/lib/terrain-alertes"
 import {
   FileText,
   Users,
@@ -7,6 +10,7 @@ import {
   Clock,
   TrendingUp,
   Wrench,
+  AlertTriangle,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -14,41 +18,6 @@ import { Badge } from "@/components/ui/badge"
 export const metadata: Metadata = {
   title: "Tableau de bord — BTP×AI",
 }
-
-const stats = [
-  {
-    label: "Devis en cours",
-    value: "—",
-    icon: FileText,
-    description: "À envoyer ou en attente",
-    color: "text-primary",
-    bg: "bg-primary/10",
-  },
-  {
-    label: "Clients actifs",
-    value: "—",
-    icon: Users,
-    description: "Avec chantier en cours",
-    color: "text-sky-400",
-    bg: "bg-sky-400/10",
-  },
-  {
-    label: "Messages non lus",
-    value: "—",
-    icon: Mail,
-    description: "Dans la messagerie",
-    color: "text-violet-400",
-    bg: "bg-violet-400/10",
-  },
-  {
-    label: "Chantiers actifs",
-    value: "—",
-    icon: Wrench,
-    description: "En cours d'exécution",
-    color: "text-emerald-400",
-    bg: "bg-emerald-400/10",
-  },
-]
 
 const quickActions = [
   {
@@ -78,12 +47,59 @@ export default async function DashboardPage() {
   const user = await getUser()
   const role = getUserRole(user) ?? "bureau"
 
+  let openAlertes = 0
+  try {
+    openAlertes = await getOpenAlertesCount(supabaseService)
+  } catch {
+    openAlertes = 0
+  }
+
   const greeting = (() => {
     const hour = new Date().getHours()
     if (hour < 12) return "Bonjour"
     if (hour < 18) return "Bon après-midi"
     return "Bonsoir"
   })()
+
+  const stats = [
+    {
+      label: "Devis en cours",
+      value: "—",
+      icon: FileText,
+      description: "À envoyer ou en attente",
+      color: "text-primary",
+      bg: "bg-primary/10",
+      href: undefined,
+    },
+    {
+      label: "Clients actifs",
+      value: "—",
+      icon: Users,
+      description: "Avec chantier en cours",
+      color: "text-sky-400",
+      bg: "bg-sky-400/10",
+      href: undefined,
+    },
+    {
+      label: "Messages non lus",
+      value: "—",
+      icon: Mail,
+      description: "Dans la messagerie",
+      color: "text-violet-400",
+      bg: "bg-violet-400/10",
+      href: undefined,
+    },
+    {
+      label: "Alertes terrain",
+      value: openAlertes > 0 ? String(openAlertes) : "—",
+      icon: AlertTriangle,
+      description: openAlertes > 0 ? "Signalements en attente" : "Aucun signalement",
+      color: openAlertes > 0 ? "text-red-400" : "text-muted-foreground",
+      bg: openAlertes > 0 ? "bg-red-400/10" : "bg-muted/30",
+      href: "/alertes",
+      urgent: openAlertes > 0,
+    },
+  ]
 
   return (
     <div className="space-y-8">
@@ -115,6 +131,30 @@ export default async function DashboardPage() {
         </Badge>
       </div>
 
+      {/* Alert banner */}
+      {openAlertes > 0 && (
+        <Link
+          href="/alertes"
+          className="flex items-center gap-3 rounded-sm px-4 py-3 transition-opacity hover:opacity-90"
+          style={{
+            background: "oklch(0.22 0.1 25)",
+            border: "1px solid oklch(0.5 0.2 25)",
+          }}
+          data-testid="alert-banner"
+        >
+          <span
+            className="w-2.5 h-2.5 rounded-full shrink-0"
+            style={{ background: "oklch(0.62 0.22 25)", animation: "alertPulse 2.4s ease infinite" }}
+          />
+          <p className="flex-1 text-sm font-bold" style={{ color: "oklch(0.92 0.2 25)", fontFamily: "var(--font-barlow)" }}>
+            {openAlertes} alerte{openAlertes > 1 ? "s" : ""} terrain en attente de traitement
+          </p>
+          <span className="text-xs uppercase tracking-wider font-bold" style={{ color: "oklch(0.75 0.18 25)", fontFamily: "var(--font-barlow)" }}>
+            Voir →
+          </span>
+        </Link>
+      )}
+
       {/* Stats grid */}
       <section>
         <div className="flex items-center gap-2 mb-4">
@@ -125,31 +165,40 @@ export default async function DashboardPage() {
           <div className="flex-1 h-px bg-border" />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {stats.map((stat) => (
-            <Card
-              key={stat.label}
-              className="bg-card border-border hover:border-border/80 transition-colors"
-            >
-              <CardHeader className="pb-2 pt-4 px-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    {stat.label}
-                  </CardTitle>
-                  <div className={`size-7 rounded-sm ${stat.bg} flex items-center justify-center`}>
-                    <stat.icon className={`size-3.5 ${stat.color}`} />
+          {stats.map((stat) => {
+            const card = (
+              <Card
+                key={stat.label}
+                className="bg-card border-border hover:border-border/80 transition-colors"
+                style={stat.urgent ? { borderColor: "oklch(0.45 0.18 25)" } : undefined}
+              >
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      {stat.label}
+                    </CardTitle>
+                    <div className={`size-7 rounded-sm ${stat.bg} flex items-center justify-center`}>
+                      <stat.icon className={`size-3.5 ${stat.color}`} />
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pb-4 px-4">
-                <p className="font-heading text-2xl font-700 text-foreground">
-                  {stat.value}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {stat.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className="pb-4 px-4">
+                  <p className="font-heading text-2xl font-700 text-foreground">
+                    {stat.value}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {stat.description}
+                  </p>
+                </CardContent>
+              </Card>
+            )
+
+            return stat.href ? (
+              <Link key={stat.label} href={stat.href} className="block">
+                {card}
+              </Link>
+            ) : card
+          })}
         </div>
       </section>
 

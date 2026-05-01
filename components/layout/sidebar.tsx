@@ -6,9 +6,11 @@ type Role = "admin" | "bureau" | "ouvrier"
 export function AppSidebar({
   email,
   role,
+  alertBadge = 0,
 }: {
   email: string
   role: Role
+  alertBadge?: number
 }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-40 flex w-56 flex-col bg-sidebar border-r border-sidebar-border">
@@ -31,7 +33,7 @@ export function AppSidebar({
       </div>
 
       {/* Navigation */}
-      <SidebarNav role={role} />
+      <SidebarNav role={role} alertBadge={alertBadge} />
 
       {/* User section */}
       <SidebarUser email={email} role={role} />
