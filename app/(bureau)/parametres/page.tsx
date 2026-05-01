@@ -3,7 +3,9 @@ import { Settings } from "lucide-react"
 import { supabaseService } from "@/lib/supabase/service"
 import { GmailConnectionSection } from "@/components/parametres/gmail-connection-section"
 import { AutoAcknowledgmentSection } from "@/components/parametres/auto-acknowledgment-section"
+import { SheetsSyncSection } from "@/components/parametres/sheets-sync-section"
 import { getAutoAcknowledgmentEnabled } from "@/lib/acknowledgments"
+import { getLastSyncAt } from "@/lib/sheets"
 
 export const metadata: Metadata = {
   title: "Paramètres — BTP×AI",
@@ -18,9 +20,10 @@ export default async function ParametresPage({
 }) {
   const { gmail } = await searchParams
 
-  const [{ data: connection }, autoAckEnabled] = await Promise.all([
+  const [{ data: connection }, autoAckEnabled, lastSyncAt] = await Promise.all([
     supabaseService.from("gmail_connections").select("email, created_at").limit(1).single(),
     getAutoAcknowledgmentEnabled(),
+    getLastSyncAt(),
   ])
 
   return (
@@ -52,6 +55,7 @@ export default async function ParametresPage({
           Automatisations
         </h2>
         <AutoAcknowledgmentSection initialEnabled={autoAckEnabled} />
+        <SheetsSyncSection lastSyncAt={lastSyncAt} />
       </div>
     </div>
   )

@@ -36,6 +36,7 @@ jobs:
       DATABASE_URL: postgresql://fake:fake@localhost:5432/fake
       GOOGLE_CLIENT_ID: fake-client-id.apps.googleusercontent.com
       GOOGLE_CLIENT_SECRET: fake-google-client-secret-for-ci
+      GOOGLE_SHEETS_SPREADSHEET_ID: fake-spreadsheet-id-for-ci
       RESEND_API_KEY: re_fake_api_key_for_ci_testing
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       IS_E2E: "true"
