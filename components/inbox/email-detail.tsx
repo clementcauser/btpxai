@@ -11,6 +11,7 @@ import {
   Link2Off,
   User,
   Sparkles,
+  FileSearch,
 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -22,7 +23,10 @@ import type {
   EmailStatusRecord,
   EmailCategory,
   EmailClassification,
+  EmailAttachment,
 } from "@/types"
+import { isSupportedMimeType } from "@/lib/agents/purchase-order"
+import { PurchaseOrderDialog } from "./purchase-order-dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
@@ -127,6 +131,9 @@ export function EmailDetail({
   const [isDrafting, setIsDrafting] = useState(false)
   const classificationCalled = useRef(false)
 
+  const [purchaseOrderAttachment, setPurchaseOrderAttachment] = useState<EmailAttachment | null>(null)
+  const [showPurchaseOrderDialog, setShowPurchaseOrderDialog] = useState(false)
+
   const form = useForm<ReplyForm>({
     resolver: zodResolver(replySchema),
     defaultValues: { body: "" },
@@ -140,6 +147,8 @@ export function EmailDetail({
     setClassification(null)
     setIsClassifying(false)
     classificationCalled.current = false
+    setPurchaseOrderAttachment(null)
+    setShowPurchaseOrderDialog(false)
     form.reset()
     setIsLoading(true)
 
@@ -149,6 +158,13 @@ export function EmailDetail({
       .catch(() => toast.error("Impossible de charger l'email"))
       .finally(() => setIsLoading(false))
   }, [messageId, form])
+
+  // Detect relevant attachments (PDF / images) once the email detail is loaded.
+  useEffect(() => {
+    if (!detail) return
+    const firstSupported = detail.attachments.find((a) => isSupportedMimeType(a.mimeType))
+    setPurchaseOrderAttachment(firstSupported ?? null)
+  }, [detail])
 
   // Auto-classify when the email body is loaded.
   useEffect(() => {
@@ -350,8 +366,29 @@ export function EmailDetail({
                 )}
                 Brouillon IA
               </button>
+              {purchaseOrderAttachment && (
+                <button
+                  onClick={() => setShowPurchaseOrderDialog(true)}
+                  data-testid="analyze-purchase-order-btn"
+                  className="inline-flex items-center gap-1 text-[10px] font-mono tracking-wider uppercase px-1.5 py-0.5 border border-emerald-400/40 text-emerald-400 hover:bg-emerald-400/10 transition-colors"
+                >
+                  <FileSearch className="size-3" />
+                  Bon de commande
+                </button>
+              )}
             </>
           ) : null}
+          {/* Show attachment button even without classification when there is a relevant file */}
+          {!classification && !isClassifying && purchaseOrderAttachment && (
+            <button
+              onClick={() => setShowPurchaseOrderDialog(true)}
+              data-testid="analyze-purchase-order-btn"
+              className="inline-flex items-center gap-1 text-[10px] font-mono tracking-wider uppercase px-1.5 py-0.5 border border-emerald-400/40 text-emerald-400 hover:bg-emerald-400/10 transition-colors"
+            >
+              <FileSearch className="size-3" />
+              Bon de commande
+            </button>
+          )}
         </div>
 
         {/* Status selector */}
@@ -561,6 +598,16 @@ export function EmailDetail({
           </form>
         )}
       </div>
+
+      {purchaseOrderAttachment && (
+        <PurchaseOrderDialog
+          open={showPurchaseOrderDialog}
+          onOpenChange={setShowPurchaseOrderDialog}
+          messageId={messageId}
+          attachment={purchaseOrderAttachment}
+          clients={clients}
+        />
+      )}
     </div>
   )
 }
