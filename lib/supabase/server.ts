@@ -48,6 +48,13 @@ export async function getUser() {
         user_metadata: { role: "bureau" },
       }
     }
+    if (cypressRole === "admin") {
+      return {
+        id: "test-admin-id",
+        email: "admin@test.com",
+        user_metadata: { role: "admin" },
+      }
+    }
   }
 
   const supabase = await createClient()
