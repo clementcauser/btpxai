@@ -187,7 +187,7 @@ export function UsersSection({ initialUsers }: Props) {
           </span>
         </div>
 
-        <form onSubmit={handleSubmit(onInvite)} className="space-y-3">
+        <form onSubmit={handleSubmit(onInvite)} className="space-y-3" noValidate>
           <div className="flex gap-2">
             <div className="flex-1 space-y-1">
               <Input
