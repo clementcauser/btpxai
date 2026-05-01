@@ -15,6 +15,11 @@ declare global {
        * Must be called before cy.visit() for any protected bureau route.
        */
       loginAsBureau(): Chainable<void>
+      /**
+       * Set a cookie that bypasses server-side Supabase auth as an admin user.
+       * Must be called before cy.visit() for any admin-only route.
+       */
+      loginAsAdmin(): Chainable<void>
     }
   }
 }
@@ -27,4 +32,8 @@ Cypress.Commands.add("loginAsOuvrier", () => {
 
 Cypress.Commands.add("loginAsBureau", () => {
   cy.setCookie("cypress-test-user", "bureau", { path: "/", sameSite: "lax" })
+})
+
+Cypress.Commands.add("loginAsAdmin", () => {
+  cy.setCookie("cypress-test-user", "admin", { path: "/", sameSite: "lax" })
 })
