@@ -143,6 +143,12 @@ describe("Alertes terrain — bouton d'alerte rapide", () => {
   // AlertesFeed fetches client-side via useEffect → cy.intercept can mock the response.
 
   describe("Bureau — page /alertes", () => {
+    // Desktop viewport: hides the sticky mobile header (lg:hidden) so filter
+    // buttons and action buttons are not covered and remain clickable.
+    beforeEach(() => {
+      cy.viewport(1280, 800)
+    })
+
     const ALERTE_ID = "alerte-bureau-1"
     const ALERTE_FIXTURE = {
       id: "alerte-bureau-1",
