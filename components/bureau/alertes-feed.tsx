@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import { AlertTriangle, Clock, CheckCircle2, ChevronRight, Image as ImageIcon } from "lucide-react"
+import { useState, useEffect } from "react"
+import { AlertTriangle, Clock, CheckCircle2, ChevronRight, Image as ImageIcon, Loader2 } from "lucide-react"
 import type { AlerteTerrainWithProject, AlerteStatus } from "@/types"
 
 type Props = {
-  initialAlertes: AlerteTerrainWithProject[]
+  initialAlertes?: AlerteTerrainWithProject[]
 }
 
 const URGENCY_CONFIG = {
@@ -62,13 +62,35 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "resolu", label: "Résolues" },
 ]
 
-export default function AlertesFeed({ initialAlertes }: Props) {
+export default function AlertesFeed({ initialAlertes = [] }: Props) {
   const [alertes, setAlertes] = useState<AlerteTerrainWithProject[]>(initialAlertes)
+  const [loading, setLoading] = useState(initialAlertes.length === 0)
   const [updating, setUpdating] = useState<string | null>(null)
   const [filter, setFilter] = useState<Filter>("all")
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null)
 
-  const filtered = filter === "all" ? alertes : alertes.filter((a: AlerteTerrainWithProject) => a.status === filter)
+  // Fetch client-side on mount so cy.intercept can mock the response in tests
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        const res = await fetch("/api/terrain/alertes")
+        if (!res.ok) return
+        const data = await res.json() as { alertes: AlerteTerrainWithProject[] }
+        if (!cancelled) setAlertes(data.alertes ?? [])
+      } catch {
+        // Keep initial state on network error
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const filtered = filter === "all"
+    ? alertes
+    : alertes.filter((a: AlerteTerrainWithProject) => a.status === filter)
 
   const handleStatusUpdate = async (id: string, newStatus: AlerteStatus) => {
     setUpdating(id)
@@ -80,7 +102,9 @@ export default function AlertesFeed({ initialAlertes }: Props) {
       })
       if (!res.ok) throw new Error()
       const { alerte } = await res.json() as { alerte: AlerteTerrainWithProject }
-      setAlertes((prev: AlerteTerrainWithProject[]) => prev.map((a: AlerteTerrainWithProject) => (a.id === id ? { ...a, ...alerte } : a)))
+      setAlertes((prev: AlerteTerrainWithProject[]) =>
+        prev.map((a: AlerteTerrainWithProject) => (a.id === id ? { ...a, ...alerte } : a))
+      )
     } catch {
       // silently revert — user can retry
     } finally {
@@ -88,8 +112,33 @@ export default function AlertesFeed({ initialAlertes }: Props) {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16" data-testid="alertes-loading">
+        <Loader2
+          className="w-6 h-6 animate-spin"
+          style={{ color: "oklch(0.45 0.008 258)" }}
+        />
+      </div>
+    )
+  }
+
+  if (alertes.length === 0) {
+    return (
+      <div
+        className="rounded-sm border border-border border-dashed bg-card/50 p-12 text-center"
+        data-testid="alertes-empty"
+      >
+        <p className="text-sm font-medium text-muted-foreground">Aucune alerte</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">
+          Les signalements du terrain apparaîtront ici.
+        </p>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="alertes-feed">
       {/* Filters */}
       <div className="flex gap-2 flex-wrap">
         {FILTERS.map((f) => {
@@ -155,7 +204,6 @@ export default function AlertesFeed({ initialAlertes }: Props) {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      {/* Urgency badge */}
                       <span
                         className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider"
                         style={{ background: urgConf.badge, color: urgConf.badgeText, fontFamily: "var(--font-barlow)" }}
@@ -163,7 +211,6 @@ export default function AlertesFeed({ initialAlertes }: Props) {
                         {urgConf.label}
                       </span>
 
-                      {/* Status badge */}
                       <span
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider"
                         style={{
@@ -224,9 +271,7 @@ export default function AlertesFeed({ initialAlertes }: Props) {
 
                 {/* Action button */}
                 {nextStatus && (
-                  <div
-                    className="px-4 pb-4"
-                  >
+                  <div className="px-4 pb-4">
                     <button
                       onClick={() => handleStatusUpdate(alerte.id, nextStatus)}
                       disabled={isUpdating}
