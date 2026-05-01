@@ -1,6 +1,6 @@
 import { supabaseService } from "@/lib/supabase/service"
 import { env } from "@/lib/env"
-import type { EmailSummary, EmailDetail } from "@/types"
+import type { EmailSummary, EmailDetail, EmailAttachment } from "@/types"
 
 const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me"
 const TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -99,7 +99,8 @@ export async function listEmails(
 
 type GmailPart = {
   mimeType: string
-  body?: { data?: string }
+  filename?: string
+  body?: { data?: string; attachmentId?: string; size?: number }
   parts?: GmailPart[]
 }
 
@@ -117,6 +118,24 @@ function extractBody(part: GmailPart): string {
     return Buffer.from(part.body.data, "base64url").toString("utf-8")
   }
   return ""
+}
+
+function extractAttachments(part: GmailPart): EmailAttachment[] {
+  const attachments: EmailAttachment[] = []
+  if (part.filename && part.body?.attachmentId) {
+    attachments.push({
+      attachmentId: part.body.attachmentId,
+      filename: part.filename,
+      mimeType: part.mimeType,
+      size: part.body.size ?? 0,
+    })
+  }
+  if (part.parts) {
+    for (const p of part.parts) {
+      attachments.push(...extractAttachments(p))
+    }
+  }
+  return attachments
 }
 
 export async function getEmail(id: string): Promise<EmailDetail> {
@@ -144,7 +163,20 @@ export async function getEmail(id: string): Promise<EmailDetail> {
     snippet: msg.snippet,
     isRead: !msg.labelIds.includes("UNREAD"),
     body: extractBody(msg.payload),
+    attachments: extractAttachments(msg.payload),
   }
+}
+
+export async function getAttachmentData(messageId: string, attachmentId: string): Promise<Buffer> {
+  const token = await getValidAccessToken()
+
+  const res = await fetch(`${GMAIL_API}/messages/${messageId}/attachments/${attachmentId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error(`Erreur Gmail API (getAttachment ${attachmentId})`)
+
+  const data = (await res.json()) as { size: number; data: string }
+  return Buffer.from(data.data, "base64url")
 }
 
 export async function sendEmail(

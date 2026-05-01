@@ -133,8 +133,37 @@ export type EmailSummary = {
   isRead: boolean
 }
 
+export type EmailAttachment = {
+  attachmentId: string
+  filename: string
+  mimeType: string
+  size: number
+}
+
 export type EmailDetail = EmailSummary & {
   body: string
+  attachments: EmailAttachment[]
+}
+
+export type PurchaseOrderItem = {
+  label: string
+  quantity: number
+  unit: string
+  unit_price: number | null
+}
+
+export type PurchaseOrderExtraction = {
+  client_name: string | null
+  client_email: string | null
+  client_phone: string | null
+  client_address: string | null
+  order_reference: string | null
+  order_date: string | null
+  delivery_deadline: string | null
+  items: PurchaseOrderItem[]
+  total_ht: number | null
+  notes: string | null
+  confidence: number
 }
 
 export type EmailAcknowledgment = {
