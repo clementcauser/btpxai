@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
-import { cookies } from "next/headers"
-import { AlertTriangle, Clock } from "lucide-react"
+import { AlertTriangle } from "lucide-react"
 import { supabaseService } from "@/lib/supabase/service"
 import { getAllAlertes } from "@/lib/terrain-alertes"
 import type { AlerteTerrainWithProject } from "@/types"
@@ -10,41 +9,13 @@ export const metadata: Metadata = {
   title: "Alertes terrain — BTP×AI",
 }
 
-const CYPRESS_FIXTURE: AlerteTerrainWithProject[] = [
-  {
-    id: "alerte-bureau-1",
-    project_id: "test-project-id",
-    user_id: "test-user-id",
-    urgency: "critique",
-    description: "Fuite de gaz détectée sur le chantier",
-    photo_url: null,
-    status: "ouvert",
-    handled_by: null,
-    handled_at: null,
-    resolved_at: null,
-    created_at: new Date().toISOString(),
-    projects: { id: "test-project-id", title: "Portail Dumont" },
-  },
-]
-
-async function isE2ETestRequest(): Promise<boolean> {
-  if (process.env.NODE_ENV === "production" && process.env.IS_E2E !== "true") return false
-  const cookieStore = await cookies()
-  const role = cookieStore.get("cypress-test-user")?.value
-  return role === "bureau" || role === "admin"
-}
-
 export default async function AlertesPage() {
   let alertes: AlerteTerrainWithProject[] = []
 
-  if (await isE2ETestRequest()) {
-    alertes = CYPRESS_FIXTURE
-  } else {
-    try {
-      alertes = await getAllAlertes(supabaseService)
-    } catch {
-      alertes = []
-    }
+  try {
+    alertes = await getAllAlertes(supabaseService)
+  } catch {
+    alertes = []
   }
 
   const openCount = alertes.filter(
@@ -89,20 +60,8 @@ export default async function AlertesPage() {
         )}
       </div>
 
-      {/* Feed */}
-      {alertes.length === 0 ? (
-        <div className="rounded-sm border border-border border-dashed bg-card/50 p-12 text-center">
-          <div className="size-12 rounded-sm bg-muted mx-auto mb-3 flex items-center justify-center">
-            <Clock className="size-5 text-muted-foreground/50" />
-          </div>
-          <p className="text-sm font-medium text-muted-foreground">Aucune alerte</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">
-            Les signalements du terrain apparaîtront ici.
-          </p>
-        </div>
-      ) : (
-        <AlertesFeed initialAlertes={alertes} />
-      )}
+      {/* Feed — always mounted so useEffect can fetch client-side (testable via cy.intercept) */}
+      <AlertesFeed initialAlertes={alertes} />
     </div>
   )
 }
