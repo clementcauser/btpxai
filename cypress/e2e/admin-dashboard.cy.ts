@@ -74,6 +74,7 @@ describe("Admin — navigation sidebar", () => {
 
   it("navigue vers /admin/entreprises via la sidebar", () => {
     cy.get("[data-testid='admin-nav-utilisateurs']").click()
+    cy.url().should("include", "/admin/utilisateurs")
     cy.get("[data-testid='admin-nav-entreprises']").click()
     cy.url().should("include", "/admin/entreprises")
   })

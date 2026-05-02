@@ -385,7 +385,7 @@ export function UsersList({ initialUsers }: { initialUsers: AdminUser[] }) {
               Créer un compte utilisateur sur la plateforme.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={createForm.handleSubmit(handleCreate)} className="space-y-4 mt-2">
+          <form onSubmit={createForm.handleSubmit(handleCreate)} className="space-y-4 mt-2" noValidate>
             <CreateUserFields form={createForm} />
             <DialogFooter className="pt-2">
               <Button
@@ -420,7 +420,7 @@ export function UsersList({ initialUsers }: { initialUsers: AdminUser[] }) {
               {editTarget?.email}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={editForm.handleSubmit(handleEdit)} className="space-y-4 mt-2">
+          <form onSubmit={editForm.handleSubmit(handleEdit)} className="space-y-4 mt-2" noValidate>
             <EditUserFields form={editForm} />
             <DialogFooter className="pt-2">
               <Button
