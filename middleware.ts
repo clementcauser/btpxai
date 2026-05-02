@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextRequest, NextResponse } from "next/server"
 
-const BUREAU_PATHS = ["/dashboard", "/devis", "/clients", "/inbox", "/parametres", "/alertes", "/materiaux"]
+const BUREAU_PATHS = ["/dashboard", "/devis", "/clients", "/inbox", "/alertes", "/materiaux"]
 const TERRAIN_PATHS = ["/terrain"]
 const ADMIN_PATHS = ["/admin"]
 
