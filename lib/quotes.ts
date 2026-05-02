@@ -38,11 +38,12 @@ export async function getQuotesForTable(
 
 export async function duplicateQuote(
   supabase: Supabase,
+  workspaceId: string,
   id: string
 ): Promise<Quote> {
   const original = await getQuote(supabase, id)
 
-  const newQuote = await createQuote(supabase, {
+  const newQuote = await createQuote(supabase, workspaceId, {
     project_id: original.project_id,
     tva_rate: original.tva_rate,
     notes: original.notes,
@@ -52,6 +53,7 @@ export async function duplicateQuote(
   if (original.items.length > 0) {
     const { error } = await supabase.from("quote_items").insert(
       original.items.map((item) => ({
+        workspace_id: workspaceId,
         quote_id: newQuote.id,
         label: item.label,
         quantity: item.quantity,
@@ -103,11 +105,12 @@ export async function getQuoteWithContext(
 
 export async function createQuote(
   supabase: Supabase,
+  workspaceId: string,
   input: CreateQuoteInput
 ): Promise<Quote> {
   const { data, error } = await supabase
     .from("quotes")
-    .insert(input)
+    .insert({ ...input, workspace_id: workspaceId })
     .select()
     .single()
 
@@ -170,11 +173,12 @@ async function recalculateTotal(
 
 export async function addQuoteItem(
   supabase: Supabase,
+  workspaceId: string,
   input: CreateQuoteItemInput
 ): Promise<QuoteItem> {
   const { data, error } = await supabase
     .from("quote_items")
-    .insert(input)
+    .insert({ ...input, workspace_id: workspaceId })
     .select()
     .single()
 

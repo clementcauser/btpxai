@@ -3,6 +3,7 @@ import { z } from "zod"
 import OpenAI from "openai"
 import { getUser } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
+import { requireWorkspace } from "@/lib/workspaces"
 import { getTerrainNotes, createTerrainNote } from "@/lib/terrain-notes"
 import { env } from "@/lib/env"
 
@@ -94,7 +95,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const note = await createTerrainNote(supabaseService, {
+    const { workspaceId } = await requireWorkspace(user.id)
+    const note = await createTerrainNote(supabaseService, workspaceId, {
       project_id: projectId,
       user_id: user.id,
       transcription,

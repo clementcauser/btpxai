@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser, getUserRole } from "@/lib/supabase/server"
+import { requireWorkspace } from "@/lib/workspaces"
 import { upsertEmailStatus } from "@/lib/email-statuses"
 
 const statusSchema = z.object({
@@ -36,7 +37,9 @@ export async function PATCH(
   }
 
   try {
+    const { workspaceId } = await requireWorkspace(user.id)
     const record = await upsertEmailStatus(
+      workspaceId,
       id,
       parsed.data.threadId,
       parsed.data.status,

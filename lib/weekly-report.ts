@@ -42,11 +42,13 @@ export function getLastWeekRange(): WeekRange {
 
 export async function getWeeklyQuoteStats(
   supabase: AnyClient,
+  workspaceId: string,
   range: WeekRange
 ): Promise<WeeklyQuoteStats> {
   const { data, error } = await supabase
     .from("quotes")
     .select("status, total_ht")
+    .eq("workspace_id", workspaceId)
     .gte("sent_at", range.start)
     .lt("sent_at", range.end)
 
@@ -66,15 +68,20 @@ export async function getWeeklyQuoteStats(
   return { sent, accepted, rejected, caRealiseHT }
 }
 
-export async function getWeeklyProjectStats(supabase: AnyClient): Promise<WeeklyProjectStats> {
+export async function getWeeklyProjectStats(
+  supabase: AnyClient,
+  workspaceId: string
+): Promise<WeeklyProjectStats> {
   const [{ count: completedTotal }, { count: inProgressTotal }] = await Promise.all([
     supabase
       .from("projects")
       .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId)
       .eq("status", "completed"),
     supabase
       .from("projects")
       .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId)
       .eq("status", "in_progress"),
   ])
 
@@ -86,6 +93,7 @@ export async function getWeeklyProjectStats(supabase: AnyClient): Promise<Weekly
 
 export async function getWeeklyAttentionPoints(
   supabase: AnyClient,
+  workspaceId: string,
   weekStart: string
 ): Promise<WeeklyAttentionPoints> {
   const [
@@ -97,19 +105,23 @@ export async function getWeeklyAttentionPoints(
     supabase
       .from("quotes")
       .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId)
       .eq("status", "sent")
       .lt("sent_at", weekStart),
     supabase
       .from("alertes_terrain")
       .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId)
       .in("status", ["ouvert", "pris_en_charge"]),
     supabase
       .from("materiaux_requests")
       .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId)
       .eq("status", "pending"),
     supabase
       .from("email_statuses")
       .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId)
       .eq("status", "a_traiter"),
   ])
 
@@ -121,22 +133,23 @@ export async function getWeeklyAttentionPoints(
   }
 }
 
-export async function getWeeklyReportData(): Promise<WeeklyReportData> {
+export async function getWeeklyReportData(workspaceId: string): Promise<WeeklyReportData> {
   const weekRange = getLastWeekRange()
 
   const [quotes, projects, attentionPoints] = await Promise.all([
-    getWeeklyQuoteStats(supabaseService, weekRange),
-    getWeeklyProjectStats(supabaseService),
-    getWeeklyAttentionPoints(supabaseService, weekRange.start),
+    getWeeklyQuoteStats(supabaseService, workspaceId, weekRange),
+    getWeeklyProjectStats(supabaseService, workspaceId),
+    getWeeklyAttentionPoints(supabaseService, workspaceId, weekRange.start),
   ])
 
   return { weekRange, quotes, projects, attentionPoints }
 }
 
-export async function getWeeklyReportRecipients(): Promise<string[]> {
+export async function getWeeklyReportRecipients(workspaceId: string): Promise<string[]> {
   const { data } = await supabaseService
-    .from("app_settings")
+    .from("workspace_settings")
     .select("value")
+    .eq("workspace_id", workspaceId)
     .eq("key", "weekly_report_recipients")
     .single()
 

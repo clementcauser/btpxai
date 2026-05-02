@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { createClient, getUserRole } from "@/lib/supabase/server"
+import { requireWorkspace } from "@/lib/workspaces"
 import { setAppSetting } from "@/lib/settings"
 
 const bodySchema = z.object({
@@ -26,7 +27,8 @@ export async function PATCH(request: Request): Promise<NextResponse> {
   const parsed = bodySchema.safeParse(await request.json())
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 })
 
-  await setAppSetting(parsed.data.key, parsed.data.value)
+  const { workspaceId } = await requireWorkspace(user.id)
+  await setAppSetting(workspaceId, parsed.data.key, parsed.data.value)
 
   return NextResponse.json({ ok: true })
 }

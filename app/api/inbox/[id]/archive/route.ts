@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser, getUserRole } from "@/lib/supabase/server"
+import { requireWorkspace } from "@/lib/workspaces"
 import { archiveEmail } from "@/lib/gmail"
 import { upsertEmailStatus } from "@/lib/email-statuses"
 
@@ -35,9 +36,10 @@ export async function POST(
   }
 
   try {
+    const { workspaceId } = await requireWorkspace(user.id)
     await Promise.all([
       archiveEmail(id),
-      upsertEmailStatus(id, parsed.data.threadId, "archive"),
+      upsertEmailStatus(workspaceId, id, parsed.data.threadId, "archive"),
     ])
     return NextResponse.json({ success: true })
   } catch (err) {

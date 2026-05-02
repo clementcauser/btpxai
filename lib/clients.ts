@@ -61,11 +61,12 @@ export async function getClientWithQuotes(
 
 export async function createClient(
   supabase: Supabase,
+  workspaceId: string,
   input: CreateClientInput
 ): Promise<Client> {
   const { data, error } = await supabase
     .from("clients")
-    .insert(input)
+    .insert({ ...input, workspace_id: workspaceId })
     .select()
     .single()
 

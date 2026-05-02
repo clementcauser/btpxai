@@ -26,11 +26,12 @@ export async function getTerrainNotes(
 
 export async function createTerrainNote(
   supabase: Supabase,
+  workspaceId: string,
   input: CreateTerrainNoteInput
 ): Promise<TerrainNote> {
   const { data, error } = await supabase
     .from("terrain_notes")
-    .insert(input)
+    .insert({ ...input, workspace_id: workspaceId })
     .select()
     .single()
   if (error) throw error

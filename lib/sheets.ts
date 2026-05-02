@@ -235,24 +235,30 @@ export async function syncMonthlyRevenue(token: string, spreadsheetId: string): 
   }
 }
 
-export async function getLastSyncAt(): Promise<string | null> {
+export async function getLastSyncAt(workspaceId: string): Promise<string | null> {
   const { data } = await supabaseService
-    .from("app_settings")
+    .from("workspace_settings")
     .select("value")
+    .eq("workspace_id", workspaceId)
     .eq("key", "sheets_last_sync_at")
     .single()
 
   return data?.value ?? null
 }
 
-async function setLastSyncAt(date: Date): Promise<void> {
-  await supabaseService.from("app_settings").upsert(
-    { key: "sheets_last_sync_at", value: date.toISOString(), updated_at: new Date().toISOString() },
-    { onConflict: "key" }
+async function setLastSyncAt(workspaceId: string, date: Date): Promise<void> {
+  await supabaseService.from("workspace_settings").upsert(
+    {
+      workspace_id: workspaceId,
+      key: "sheets_last_sync_at",
+      value: date.toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "workspace_id,key" }
   )
 }
 
-export async function syncAllToSheets(): Promise<{
+export async function syncAllToSheets(workspaceId: string): Promise<{
   results: SyncResult[]
   syncedAt: string
   hasError: boolean
@@ -271,7 +277,7 @@ export async function syncAllToSheets(): Promise<{
   const syncedAt = new Date().toISOString()
 
   if (!hasError) {
-    await setLastSyncAt(new Date())
+    await setLastSyncAt(workspaceId, new Date())
   }
 
   return { results, syncedAt, hasError }

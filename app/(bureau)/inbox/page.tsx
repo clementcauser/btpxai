@@ -1,6 +1,9 @@
 import type { Metadata } from "next"
 import { Mail } from "lucide-react"
 import { supabaseService } from "@/lib/supabase/service"
+import { getUser } from "@/lib/supabase/server"
+import { requireWorkspace } from "@/lib/workspaces"
+import { redirect } from "next/navigation"
 import { listEmails } from "@/lib/gmail"
 import { getEmailStatuses } from "@/lib/email-statuses"
 import { GmailConnectionBanner } from "@/components/inbox/gmail-connection-banner"
@@ -12,9 +15,14 @@ export const metadata: Metadata = {
 }
 
 export default async function InboxPage() {
+  const user = await getUser()
+  if (!user) redirect("/login")
+  const { workspaceId } = await requireWorkspace(user.id)
+
   const { data: connection } = await supabaseService
     .from("gmail_connections")
     .select("email")
+    .eq("workspace_id", workspaceId)
     .limit(1)
     .single()
 
@@ -25,12 +33,13 @@ export default async function InboxPage() {
     supabaseService
       .from("clients")
       .select("id, name, email")
+      .eq("workspace_id", workspaceId)
       .order("name", { ascending: true }),
   ])
 
   const initialStatuses: Record<string, EmailStatusRecord> =
     connection && emails.length
-      ? await getEmailStatuses(emails.map((e) => e.id)).catch(() => ({}))
+      ? await getEmailStatuses(workspaceId, emails.map((e) => e.id)).catch(() => ({}))
       : {}
 
   const clients = (clientsResult.data ?? []) as {
