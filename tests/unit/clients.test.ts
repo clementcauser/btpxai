@@ -89,9 +89,9 @@ describe("createClient", () => {
     const supabase = makeSupabase(builder)
 
     const input = { name: "Dupont SA", email: "dupont@example.com" }
-    const result = await createClient(supabase, input)
+    const result = await createClient(supabase, "ws1", input)
 
-    expect(builder.insert).toHaveBeenCalledWith(input)
+    expect(builder.insert).toHaveBeenCalledWith({ ...input, workspace_id: "ws1" })
     expect(builder.single).toHaveBeenCalled()
     expect(result).toEqual(mockClient)
   })
@@ -102,7 +102,7 @@ describe("createClient", () => {
     const supabase = makeSupabase(builder)
 
     await expect(
-      createClient(supabase, { name: "Test" })
+      createClient(supabase, "ws1", { name: "Test" })
     ).rejects.toEqual(dbError)
   })
 })

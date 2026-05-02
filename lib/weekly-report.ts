@@ -35,7 +35,7 @@ export type WeeklyReportData = {
 export function getLastWeekRange(): WeekRange {
   const now = new Date()
   const end = new Date(now)
-  end.setHours(0, 0, 0, 0)
+  end.setUTCHours(0, 0, 0, 0)
   const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000)
   return { start: start.toISOString(), end: end.toISOString() }
 }

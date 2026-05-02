@@ -130,9 +130,9 @@ describe("createQuote", () => {
     const supabase = makeSupabase(builder)
 
     const input = { project_id: "p1", tva_rate: 20, validity_days: 30 }
-    const result = await createQuote(supabase, input)
+    const result = await createQuote(supabase, "ws1", input)
 
-    expect(builder.insert).toHaveBeenCalledWith(input)
+    expect(builder.insert).toHaveBeenCalledWith({ ...input, workspace_id: "ws1" })
     expect(builder.single).toHaveBeenCalled()
     expect(result).toEqual(mockQuote)
   })
@@ -143,7 +143,7 @@ describe("createQuote", () => {
     const supabase = makeSupabase(builder)
 
     await expect(
-      createQuote(supabase, { project_id: "p1" })
+      createQuote(supabase, "ws1", { project_id: "p1" })
     ).rejects.toEqual(dbError)
   })
 })
@@ -218,7 +218,7 @@ describe("addQuoteItem", () => {
       unit_price: 45,
       unit: "m",
     }
-    const result = await addQuoteItem(supabase, input)
+    const result = await addQuoteItem(supabase, "ws1", input)
 
     expect(result).toEqual(mockItem)
     // recalc: fetched items and updated total
@@ -232,7 +232,7 @@ describe("addQuoteItem", () => {
     const supabase = makeSupabase(builder)
 
     await expect(
-      addQuoteItem(supabase, {
+      addQuoteItem(supabase, "ws1", {
         quote_id: "q1",
         label: "Test",
         quantity: 1,

@@ -95,7 +95,7 @@ describe("getQuotesDueForReminder", () => {
       .mockReturnValueOnce(remindersBuilder)
       .mockReturnValueOnce(quotesBuilder)
 
-    const result = await getQuotesDueForReminder("quote_j7")
+    const result = await getQuotesDueForReminder("ws1", "quote_j7")
 
     expect(mockFrom).toHaveBeenNthCalledWith(1, "quote_reminders")
     expect(remindersBuilder.eq).toHaveBeenCalledWith("type", "quote_j7")
@@ -117,7 +117,7 @@ describe("getQuotesDueForReminder", () => {
       .mockReturnValueOnce(remindersBuilder)
       .mockReturnValueOnce(quotesBuilder)
 
-    const result = await getQuotesDueForReminder("quote_j7")
+    const result = await getQuotesDueForReminder("ws1", "quote_j7")
     expect(result).toHaveLength(0)
   })
 
@@ -128,7 +128,7 @@ describe("getQuotesDueForReminder", () => {
       .mockReturnValueOnce(remindersBuilder)
       .mockReturnValueOnce(quotesBuilder)
 
-    await getQuotesDueForReminder("payment")
+    await getQuotesDueForReminder("ws1", "payment")
 
     expect(quotesBuilder.eq).toHaveBeenCalledWith("status", "accepted")
   })
@@ -141,7 +141,7 @@ describe("getQuotesDueForReminder", () => {
       .mockReturnValueOnce(remindersBuilder)
       .mockReturnValueOnce(quotesBuilder)
 
-    await expect(getQuotesDueForReminder("quote_j14")).rejects.toEqual(dbError)
+    await expect(getQuotesDueForReminder("ws1", "quote_j14")).rejects.toEqual(dbError)
   })
 })
 
@@ -161,10 +161,11 @@ describe("logReminder", () => {
     const builder = makeBuilder({ data: reminder, error: null })
     mockFrom.mockReturnValueOnce(builder)
 
-    const result = await logReminder("q1", "quote_j7", "jean@example.com")
+    const result = await logReminder("ws1", "q1", "quote_j7", "jean@example.com")
 
     expect(mockFrom).toHaveBeenCalledWith("quote_reminders")
     expect(builder.insert).toHaveBeenCalledWith({
+      workspace_id: "ws1",
       quote_id: "q1",
       type: "quote_j7",
       email_to: "jean@example.com",
@@ -178,7 +179,7 @@ describe("logReminder", () => {
     mockFrom.mockReturnValueOnce(builder)
 
     await expect(
-      logReminder("q1", "quote_j7", "jean@example.com")
+      logReminder("ws1", "q1", "quote_j7", "jean@example.com")
     ).rejects.toEqual(dbError)
   })
 })
