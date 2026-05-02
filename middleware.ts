@@ -1,8 +1,9 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextRequest, NextResponse } from "next/server"
 
-const BUREAU_PATHS = ["/dashboard", "/devis", "/clients", "/inbox", "/parametres"]
+const BUREAU_PATHS = ["/dashboard", "/devis", "/clients", "/inbox", "/parametres", "/alertes", "/materiaux"]
 const TERRAIN_PATHS = ["/terrain"]
+const ADMIN_PATHS = ["/admin"]
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -31,7 +32,7 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user: supabaseUser } } = await supabase.auth.getUser()
-  
+
   let user = supabaseUser
   let role = user?.user_metadata?.role as string | undefined
 
@@ -50,17 +51,32 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname === "/login") {
-    return user
-      ? NextResponse.redirect(new URL("/dashboard", request.url))
-      : response
+    if (!user) return response
+    return NextResponse.redirect(new URL(role === "admin" ? "/admin" : "/dashboard", request.url))
   }
 
   if (!user) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
+  // Admin users are redirected away from bureau/terrain to their own space
+  if (role === "admin") {
+    if (BUREAU_PATHS.some((p) => pathname.startsWith(p))) {
+      return NextResponse.redirect(new URL("/admin", request.url))
+    }
+    if (TERRAIN_PATHS.some((p) => pathname.startsWith(p))) {
+      return NextResponse.redirect(new URL("/admin", request.url))
+    }
+  }
+
+  if (ADMIN_PATHS.some((p) => pathname.startsWith(p))) {
+    if (role !== "admin") {
+      return NextResponse.redirect(new URL("/profil", request.url))
+    }
+  }
+
   if (BUREAU_PATHS.some((p) => pathname.startsWith(p))) {
-    if (role !== "admin" && role !== "bureau") {
+    if (role !== "bureau") {
       return NextResponse.redirect(new URL("/profil", request.url))
     }
   }

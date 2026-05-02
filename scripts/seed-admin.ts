@@ -1,5 +1,10 @@
 // Script one-shot pour créer le premier utilisateur admin.
 // Usage : npx tsx scripts/seed-admin.ts
+//
+// Variables d'environnement requises (dans .env.local ou dans l'environnement) :
+//   SEED_ADMIN_EMAIL    — email du compte admin à créer
+//   SEED_ADMIN_PASSWORD — mot de passe (min. 8 caractères)
+//   SEED_ADMIN_NAME     — nom affiché (optionnel, défaut : "Admin")
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
@@ -17,18 +22,35 @@ try {
 }
 
 async function main() {
+  const email = process.env.SEED_ADMIN_EMAIL;
+  const password = process.env.SEED_ADMIN_PASSWORD;
+  const name = process.env.SEED_ADMIN_NAME ?? "Admin";
+
+  if (!email) {
+    console.error("Erreur : SEED_ADMIN_EMAIL est requis.");
+    process.exit(1);
+  }
+  if (!password) {
+    console.error("Erreur : SEED_ADMIN_PASSWORD est requis.");
+    process.exit(1);
+  }
+  if (password.length < 8) {
+    console.error("Erreur : SEED_ADMIN_PASSWORD doit contenir au moins 8 caractères.");
+    process.exit(1);
+  }
+
   // Import dynamique APRÈS que les vars sont en place
   const { supabaseService } = await import("../lib/supabase/service");
 
   const { data, error } = await supabaseService.auth.admin.createUser({
-    email: "admin@btpxai.fr",
-    password: "123qweASD!!!",
+    email,
+    password,
     email_confirm: true,
-    user_metadata: { name: "Admin", role: "admin" },
+    user_metadata: { name, role: "admin" },
   });
 
   if (error) throw error;
-  console.log("Utilisateur admin créé :", data.user?.id);
+  console.log(`Utilisateur admin créé : ${data.user?.id} (${email})`);
   process.exit(0);
 }
 
