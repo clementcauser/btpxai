@@ -1,0 +1,16 @@
+name: Cron - Sheets Sync
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    name: Sync data to Google Sheets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call API
+        run: |
+          curl -f -s -X GET "${{ secrets.APP_URL }}/api/cron/sheets-sync" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

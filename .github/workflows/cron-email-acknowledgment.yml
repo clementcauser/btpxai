@@ -1,0 +1,17 @@
+name: Cron - Email Acknowledgment
+
+on:
+  schedule:
+    # GitHub Actions minimum is 5 minutes (was 2min on Vercel)
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    name: Send auto-acknowledgments
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call API
+        run: |
+          curl -f -s -X GET "${{ secrets.APP_URL }}/api/cron/email-acknowledgment" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
