@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
+import { requireWorkspace, WorkspaceError } from "@/lib/workspaces"
 
 const briefSchema = z.object({
   client_id: z.string().uuid("Client invalide"),
@@ -17,6 +18,16 @@ export async function POST(req: NextRequest) {
   const user = await getUser()
   if (!user) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+  }
+
+  let workspaceId: string
+  try {
+    const ws = await requireWorkspace(user.id)
+    workspaceId = ws.workspaceId
+  } catch (err) {
+    if (err instanceof WorkspaceError)
+      return NextResponse.json({ error: err.message }, { status: 403 })
+    throw err
   }
 
   let body: unknown
@@ -55,6 +66,7 @@ export async function POST(req: NextRequest) {
       client_id,
       title: `Brief devis — ${today}`,
       description: projectDescription,
+      workspace_id: workspaceId,
     })
     .select()
     .single()
@@ -72,6 +84,7 @@ export async function POST(req: NextRequest) {
     .insert({
       project_id: project.id,
       notes: notes_internes?.trim() || null,
+      workspace_id: workspaceId,
     })
     .select()
     .single()
