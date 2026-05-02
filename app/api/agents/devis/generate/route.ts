@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
+import { requireWorkspace } from "@/lib/workspaces"
 import { generateQuoteItems } from "@/lib/agents/devis"
 import { addQuoteItem } from "@/lib/quotes"
 
@@ -60,8 +61,9 @@ export async function POST(req: NextRequest) {
   const insertedItems = []
 
   try {
+    const { workspaceId } = await requireWorkspace(user.id)
     for (const item of generated.items) {
-      const inserted = await addQuoteItem(supabaseService, {
+      const inserted = await addQuoteItem(supabaseService, workspaceId, {
         quote_id,
         label: item.label,
         quantity: item.quantity,

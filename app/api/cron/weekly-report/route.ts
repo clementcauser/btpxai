@@ -4,6 +4,7 @@ import { getWeeklyReportData, getWeeklyReportRecipients } from "@/lib/weekly-rep
 import { generateWeeklyReportNarrative } from "@/lib/agents/weekly-report"
 import { buildWeeklyReportHtml, buildWeeklyReportSubject } from "@/lib/email/weekly-report"
 import { env } from "@/lib/env"
+import { supabaseService } from "@/lib/supabase/service"
 
 function isCronAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET
@@ -12,22 +13,25 @@ function isCronAuthorized(request: Request): boolean {
   return auth === `Bearer ${secret}`
 }
 
-export async function GET(request: Request): Promise<NextResponse> {
-  if (!isCronAuthorized(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+type WorkspaceResult = {
+  workspaceId: string
+  status: "sent" | "skipped" | "error"
+  reason?: string
+  recipients?: number
+}
 
+async function processWorkspace(workspaceId: string): Promise<WorkspaceResult> {
   let data
   try {
-    data = await getWeeklyReportData()
+    data = await getWeeklyReportData(workspaceId)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: `data_fetch_error: ${message}` }, { status: 500 })
+    return { workspaceId, status: "error", reason: `data_fetch_error: ${message}` }
   }
 
-  const recipients = await getWeeklyReportRecipients()
+  const recipients = await getWeeklyReportRecipients(workspaceId)
   if (recipients.length === 0) {
-    return NextResponse.json({ status: "skipped", reason: "no_recipients_configured" })
+    return { workspaceId, status: "skipped", reason: "no_recipients_configured" }
   }
 
   let narrative
@@ -35,7 +39,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     narrative = await generateWeeklyReportNarrative(data)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: `narrative_error: ${message}` }, { status: 500 })
+    return { workspaceId, status: "error", reason: `narrative_error: ${message}` }
   }
 
   try {
@@ -48,12 +52,26 @@ export async function GET(request: Request): Promise<NextResponse> {
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: `send_error: ${message}` }, { status: 500 })
+    return { workspaceId, status: "error", reason: `send_error: ${message}` }
   }
 
-  return NextResponse.json({
-    status: "sent",
-    recipients: recipients.length,
-    weekRange: data.weekRange,
-  })
+  return { workspaceId, status: "sent", recipients: recipients.length }
+}
+
+export async function GET(request: Request): Promise<NextResponse> {
+  if (!isCronAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const { data: workspaces, error } = await supabaseService.from("workspaces").select("id")
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  const perWorkspace: WorkspaceResult[] = []
+  for (const ws of workspaces ?? []) {
+    perWorkspace.push(await processWorkspace(ws.id))
+  }
+
+  return NextResponse.json({ workspaces: perWorkspace.length, perWorkspace })
 }

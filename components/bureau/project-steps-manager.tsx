@@ -151,6 +151,7 @@ export default function ProjectStepsManager({ projectId }: { projectId: string }
       order: nextOrder,
       completed_at: null,
       completed_by: null,
+      workspace_id: "",
     }
 
     setSteps((prev) => [...prev, optimistic])

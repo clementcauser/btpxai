@@ -58,7 +58,7 @@ describe("createTerrainNote", () => {
     const builder = makeBuilder({ data: mockNote, error: null })
     const supabase = makeSupabase(builder)
 
-    const result = await createTerrainNote(supabase, {
+    const result = await createTerrainNote(supabase, "ws1", {
       project_id: "p1",
       user_id: "u1",
       transcription: "Besoin de rallonges électriques",
@@ -71,6 +71,7 @@ describe("createTerrainNote", () => {
       user_id: "u1",
       transcription: "Besoin de rallonges électriques",
       audio_url: null,
+      workspace_id: "ws1",
     })
     expect(builder.single).toHaveBeenCalled()
     expect(result).toEqual(mockNote)
@@ -82,7 +83,7 @@ describe("createTerrainNote", () => {
     const supabase = makeSupabase(builder)
 
     await expect(
-      createTerrainNote(supabase, {
+      createTerrainNote(supabase, "ws1", {
         project_id: "p1",
         user_id: "u1",
         transcription: "test",

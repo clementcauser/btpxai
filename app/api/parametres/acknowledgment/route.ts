@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
+import { requireWorkspace } from "@/lib/workspaces"
 import {
   getAutoAcknowledgmentEnabled,
   setAutoAcknowledgmentEnabled,
@@ -13,7 +14,8 @@ export async function GET(): Promise<NextResponse> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const enabled = await getAutoAcknowledgmentEnabled()
+  const { workspaceId } = await requireWorkspace(user.id)
+  const enabled = await getAutoAcknowledgmentEnabled(workspaceId)
   return NextResponse.json({ enabled })
 }
 
@@ -32,6 +34,7 @@ export async function PATCH(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 })
   }
 
-  await setAutoAcknowledgmentEnabled(parsed.data.enabled)
+  const { workspaceId } = await requireWorkspace(user.id)
+  await setAutoAcknowledgmentEnabled(workspaceId, parsed.data.enabled)
   return NextResponse.json({ enabled: parsed.data.enabled })
 }

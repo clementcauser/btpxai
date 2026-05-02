@@ -14,6 +14,7 @@ const REMINDER_STATUS: Record<ReminderType, QuoteStatus> = {
 }
 
 export async function getQuotesDueForReminder(
+  workspaceId: string,
   type: ReminderType
 ): Promise<QuoteWithContext[]> {
   const days = REMINDER_DAYS[type]
@@ -22,10 +23,10 @@ export async function getQuotesDueForReminder(
     Date.now() - days * 24 * 60 * 60 * 1000
   ).toISOString()
 
-  // Collect quote IDs that already have this reminder type
   const { data: existing } = await supabaseService
     .from("quote_reminders")
     .select("quote_id")
+    .eq("workspace_id", workspaceId)
     .eq("type", type)
 
   const alreadySentIds = new Set((existing ?? []).map((r) => r.quote_id))
@@ -33,6 +34,7 @@ export async function getQuotesDueForReminder(
   const { data: quotes, error } = await supabaseService
     .from("quotes")
     .select("*, items:quote_items(*), project:projects(*, client:clients(*))")
+    .eq("workspace_id", workspaceId)
     .eq("status", status)
     .eq("reminders_enabled", true)
     .lte("sent_at", threshold)
@@ -46,13 +48,14 @@ export async function getQuotesDueForReminder(
 }
 
 export async function logReminder(
+  workspaceId: string,
   quoteId: string,
   type: ReminderType,
   emailTo: string
 ): Promise<QuoteReminder> {
   const { data, error } = await supabaseService
     .from("quote_reminders")
-    .insert({ quote_id: quoteId, type, email_to: emailTo })
+    .insert({ workspace_id: workspaceId, quote_id: quoteId, type, email_to: emailTo })
     .select()
     .single()
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser } from "@/lib/supabase/server"
+import { requireWorkspace } from "@/lib/workspaces"
 import { classifyEmail } from "@/lib/agents/email"
 import { saveEmailCategory } from "@/lib/email-statuses"
 
@@ -38,9 +39,13 @@ export async function POST(req: NextRequest) {
     const result = await classifyEmail(parsed.data.subject, parsed.data.body, req.signal)
 
     if (parsed.data.messageId && parsed.data.threadId) {
-      saveEmailCategory(parsed.data.messageId, parsed.data.threadId, result.category).catch(
-        (err) => console.error("Failed to persist email category:", err)
-      )
+      const { workspaceId } = await requireWorkspace(user.id)
+      saveEmailCategory(
+        workspaceId,
+        parsed.data.messageId,
+        parsed.data.threadId,
+        result.category
+      ).catch((err) => console.error("Failed to persist email category:", err))
     }
 
     return NextResponse.json(result)

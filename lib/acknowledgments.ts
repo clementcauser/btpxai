@@ -3,29 +3,42 @@ import type { EmailAcknowledgment } from "@/types"
 
 const DEDUP_WINDOW_MINUTES = 30
 
-export async function getAutoAcknowledgmentEnabled(): Promise<boolean> {
+export async function getAutoAcknowledgmentEnabled(workspaceId: string): Promise<boolean> {
   const { data } = await supabaseService
-    .from("app_settings")
+    .from("workspace_settings")
     .select("value")
+    .eq("workspace_id", workspaceId)
     .eq("key", "auto_acknowledgment_enabled")
     .single()
 
   return data?.value === "true"
 }
 
-export async function setAutoAcknowledgmentEnabled(enabled: boolean): Promise<void> {
-  await supabaseService.from("app_settings").upsert(
-    { key: "auto_acknowledgment_enabled", value: String(enabled), updated_at: new Date().toISOString() },
-    { onConflict: "key" }
+export async function setAutoAcknowledgmentEnabled(
+  workspaceId: string,
+  enabled: boolean
+): Promise<void> {
+  await supabaseService.from("workspace_settings").upsert(
+    {
+      workspace_id: workspaceId,
+      key: "auto_acknowledgment_enabled",
+      value: String(enabled),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "workspace_id,key" }
   )
 }
 
-export async function hasRecentAcknowledgment(senderEmail: string): Promise<boolean> {
+export async function hasRecentAcknowledgment(
+  workspaceId: string,
+  senderEmail: string
+): Promise<boolean> {
   const since = new Date(Date.now() - DEDUP_WINDOW_MINUTES * 60 * 1000).toISOString()
 
   const { data } = await supabaseService
     .from("email_acknowledgments")
     .select("id")
+    .eq("workspace_id", workspaceId)
     .eq("sender_email", senderEmail.toLowerCase())
     .gte("sent_at", since)
     .limit(1)
@@ -34,6 +47,7 @@ export async function hasRecentAcknowledgment(senderEmail: string): Promise<bool
 }
 
 export async function logAcknowledgment(
+  workspaceId: string,
   messageId: string,
   threadId: string,
   senderEmail: string,
@@ -42,6 +56,7 @@ export async function logAcknowledgment(
   const { data, error } = await supabaseService
     .from("email_acknowledgments")
     .insert({
+      workspace_id: workspaceId,
       message_id: messageId,
       thread_id: threadId,
       sender_email: senderEmail.toLowerCase(),
@@ -54,19 +69,25 @@ export async function logAcknowledgment(
   return data as EmailAcknowledgment
 }
 
-export async function getLastPollAt(): Promise<Date | null> {
+export async function getLastPollAt(workspaceId: string): Promise<Date | null> {
   const { data } = await supabaseService
-    .from("app_settings")
+    .from("workspace_settings")
     .select("value")
+    .eq("workspace_id", workspaceId)
     .eq("key", "acknowledgment_last_poll_at")
     .single()
 
   return data?.value ? new Date(data.value) : null
 }
 
-export async function setLastPollAt(date: Date): Promise<void> {
-  await supabaseService.from("app_settings").upsert(
-    { key: "acknowledgment_last_poll_at", value: date.toISOString(), updated_at: new Date().toISOString() },
-    { onConflict: "key" }
+export async function setLastPollAt(workspaceId: string, date: Date): Promise<void> {
+  await supabaseService.from("workspace_settings").upsert(
+    {
+      workspace_id: workspaceId,
+      key: "acknowledgment_last_poll_at",
+      value: date.toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "workspace_id,key" }
   )
 }

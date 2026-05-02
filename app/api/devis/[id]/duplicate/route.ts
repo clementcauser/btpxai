@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient, getUser } from "@/lib/supabase/server"
+import { requireWorkspace } from "@/lib/workspaces"
 import { duplicateQuote } from "@/lib/quotes"
 
 export async function POST(
@@ -16,7 +17,8 @@ export async function POST(
   const supabase = await createClient()
 
   try {
-    const quote = await duplicateQuote(supabase, id)
+    const { workspaceId } = await requireWorkspace(user.id)
+    const quote = await duplicateQuote(supabase, workspaceId, id)
     return NextResponse.json(quote)
   } catch {
     return NextResponse.json(

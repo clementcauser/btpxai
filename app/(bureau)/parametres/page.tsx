@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Settings } from "lucide-react"
 import { getUser, getUserRole } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
+import { requireWorkspace } from "@/lib/workspaces"
 import { getAutoAcknowledgmentEnabled } from "@/lib/acknowledgments"
 import { getLastSyncAt } from "@/lib/sheets"
 import { getMultipleSettings } from "@/lib/settings"
@@ -40,12 +41,19 @@ export default async function ParametresPage({
 
   const { gmail } = await searchParams
 
+  const { workspaceId } = await requireWorkspace(user.id)
+
   const [settings, { data: connection }, autoAckEnabled, lastSyncAt, { data: usersData }] =
     await Promise.all([
-      getMultipleSettings(SETTINGS_KEYS),
-      supabaseService.from("gmail_connections").select("email, created_at").limit(1).single(),
-      getAutoAcknowledgmentEnabled(),
-      getLastSyncAt(),
+      getMultipleSettings(workspaceId, SETTINGS_KEYS),
+      supabaseService
+        .from("gmail_connections")
+        .select("email, created_at")
+        .eq("workspace_id", workspaceId)
+        .limit(1)
+        .single(),
+      getAutoAcknowledgmentEnabled(workspaceId),
+      getLastSyncAt(workspaceId),
       supabaseService.auth.admin.listUsers({ perPage: 200 }),
     ])
 

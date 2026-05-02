@@ -85,7 +85,7 @@ describe("getWeeklyQuoteStats", () => {
     const builder = makeBuilder({ data: rows, error: null })
     mockFrom.mockReturnValueOnce(builder)
 
-    const stats = await getWeeklyQuoteStats({ from: mockFrom } as never, range)
+    const stats = await getWeeklyQuoteStats({ from: mockFrom } as never, "ws1", range)
 
     expect(stats.sent).toBe(4)
     expect(stats.accepted).toBe(2)
@@ -97,7 +97,7 @@ describe("getWeeklyQuoteStats", () => {
     const builder = makeBuilder({ data: [], error: null })
     mockFrom.mockReturnValueOnce(builder)
 
-    const stats = await getWeeklyQuoteStats({ from: mockFrom } as never, range)
+    const stats = await getWeeklyQuoteStats({ from: mockFrom } as never, "ws1", range)
 
     expect(stats.sent).toBe(0)
     expect(stats.accepted).toBe(0)
@@ -110,14 +110,14 @@ describe("getWeeklyQuoteStats", () => {
     const builder = makeBuilder({ data: null, error: dbError })
     mockFrom.mockReturnValueOnce(builder)
 
-    await expect(getWeeklyQuoteStats({ from: mockFrom } as never, range)).rejects.toEqual(dbError)
+    await expect(getWeeklyQuoteStats({ from: mockFrom } as never, "ws1", range)).rejects.toEqual(dbError)
   })
 
   it("filters by sent_at range (gte start, lt end)", async () => {
     const builder = makeBuilder({ data: [], error: null })
     mockFrom.mockReturnValueOnce(builder)
 
-    await getWeeklyQuoteStats({ from: mockFrom } as never, range)
+    await getWeeklyQuoteStats({ from: mockFrom } as never, "ws1", range)
 
     expect(builder.gte).toHaveBeenCalledWith("sent_at", range.start)
     expect(builder.lt).toHaveBeenCalledWith("sent_at", range.end)
@@ -134,7 +134,7 @@ describe("getWeeklyProjectStats", () => {
     const inProgressBuilder = makeCountBuilder(3)
     mockFrom.mockReturnValueOnce(completedBuilder).mockReturnValueOnce(inProgressBuilder)
 
-    const stats = await getWeeklyProjectStats({ from: mockFrom } as never)
+    const stats = await getWeeklyProjectStats({ from: mockFrom } as never, "ws1")
 
     expect(stats.completedTotal).toBe(5)
     expect(stats.inProgressTotal).toBe(3)
@@ -145,7 +145,7 @@ describe("getWeeklyProjectStats", () => {
     const inProgressBuilder = makeCountBuilder(0)
     mockFrom.mockReturnValueOnce(completedBuilder).mockReturnValueOnce(inProgressBuilder)
 
-    const stats = await getWeeklyProjectStats({ from: mockFrom } as never)
+    const stats = await getWeeklyProjectStats({ from: mockFrom } as never, "ws1")
 
     expect(stats.completedTotal).toBe(0)
     expect(stats.inProgressTotal).toBe(0)
@@ -166,7 +166,7 @@ describe("getWeeklyAttentionPoints", () => {
       .mockReturnValueOnce(makeCountBuilder(4))  // pendingMaterials
       .mockReturnValueOnce(makeCountBuilder(7))  // unprocessedEmails
 
-    const points = await getWeeklyAttentionPoints({ from: mockFrom } as never, weekStart)
+    const points = await getWeeklyAttentionPoints({ from: mockFrom } as never, "ws1", weekStart)
 
     expect(points.pendingQuotes).toBe(2)
     expect(points.openAlerts).toBe(1)
@@ -182,7 +182,7 @@ describe("getWeeklyAttentionPoints", () => {
       .mockReturnValueOnce(makeCountBuilder(0))
       .mockReturnValueOnce(makeCountBuilder(0))
 
-    await getWeeklyAttentionPoints({ from: mockFrom } as never, weekStart)
+    await getWeeklyAttentionPoints({ from: mockFrom } as never, "ws1", weekStart)
 
     expect(pendingBuilder.eq).toHaveBeenCalledWith("status", "sent")
     expect(pendingBuilder.lt).toHaveBeenCalledWith("sent_at", weekStart)
@@ -201,7 +201,7 @@ describe("getWeeklyReportRecipients", () => {
     })
     mockFrom.mockReturnValueOnce(builder)
 
-    const result = await getWeeklyReportRecipients()
+    const result = await getWeeklyReportRecipients("ws1")
 
     expect(result).toEqual(["gerant@btpxai.fr", "bureau@btpxai.fr"])
   })
@@ -210,7 +210,7 @@ describe("getWeeklyReportRecipients", () => {
     const builder = makeBuilder({ data: null, error: null })
     mockFrom.mockReturnValueOnce(builder)
 
-    const result = await getWeeklyReportRecipients()
+    const result = await getWeeklyReportRecipients("ws1")
 
     expect(result).toEqual([])
   })
@@ -219,7 +219,7 @@ describe("getWeeklyReportRecipients", () => {
     const builder = makeBuilder({ data: { value: "not-json" }, error: null })
     mockFrom.mockReturnValueOnce(builder)
 
-    const result = await getWeeklyReportRecipients()
+    const result = await getWeeklyReportRecipients("ws1")
 
     expect(result).toEqual([])
   })
@@ -231,7 +231,7 @@ describe("getWeeklyReportRecipients", () => {
     })
     mockFrom.mockReturnValueOnce(builder)
 
-    const result = await getWeeklyReportRecipients()
+    const result = await getWeeklyReportRecipients("ws1")
 
     expect(result).toEqual(["valid@example.com", "another@example.com"])
   })
@@ -243,7 +243,7 @@ describe("getWeeklyReportRecipients", () => {
     })
     mockFrom.mockReturnValueOnce(builder)
 
-    const result = await getWeeklyReportRecipients()
+    const result = await getWeeklyReportRecipients("ws1")
 
     expect(result).toEqual([])
   })

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient, getUserRole } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
+import { requireWorkspace } from "@/lib/workspaces"
 import { setAppSetting } from "@/lib/settings"
 
 const BUCKET = "company-logos"
@@ -45,7 +46,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     .from(BUCKET)
     .getPublicUrl(path)
 
-  await setAppSetting("company_logo_url", publicUrl)
+  const { workspaceId } = await requireWorkspace(user.id)
+  await setAppSetting(workspaceId, "company_logo_url", publicUrl)
 
   return NextResponse.json({ url: publicUrl })
 }

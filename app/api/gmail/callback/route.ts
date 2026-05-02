@@ -2,11 +2,22 @@ import { NextRequest, NextResponse } from "next/server"
 import { getUser } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
 import { env } from "@/lib/env"
+import { requireWorkspace, WorkspaceError } from "@/lib/workspaces"
 
 export async function GET(req: NextRequest) {
   const user = await getUser()
   if (!user) {
     return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/login`)
+  }
+
+  let workspaceId: string
+  try {
+    const ws = await requireWorkspace(user.id)
+    workspaceId = ws.workspaceId
+  } catch (err) {
+    if (err instanceof WorkspaceError)
+      return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error`)
+    throw err
   }
 
   const code = req.nextUrl.searchParams.get("code")
@@ -83,6 +94,7 @@ export async function GET(req: NextRequest) {
     expires_at: expiresAt,
     created_at: now,
     updated_at: now,
+    workspace_id: workspaceId,
   })
 
   const finalResponse = NextResponse.redirect(

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser, getUserRole } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
+import { requireWorkspace, WorkspaceError } from "@/lib/workspaces"
 
 export const maxDuration = 30
 
@@ -35,6 +36,16 @@ export async function POST(req: NextRequest) {
   const role = getUserRole(user)
   if (role !== "admin" && role !== "bureau") {
     return NextResponse.json({ error: "Accès refusé" }, { status: 403 })
+  }
+
+  let workspaceId: string
+  try {
+    const ws = await requireWorkspace(user.id)
+    workspaceId = ws.workspaceId
+  } catch (err) {
+    if (err instanceof WorkspaceError)
+      return NextResponse.json({ error: err.message }, { status: 403 })
+    throw err
   }
 
   let body: unknown
@@ -80,6 +91,7 @@ export async function POST(req: NextRequest) {
           email: client_email ?? null,
           phone: client_phone ?? null,
           address: client_address ?? null,
+          workspace_id: workspaceId,
         })
         .select("id")
         .single()
@@ -96,6 +108,7 @@ export async function POST(req: NextRequest) {
         title: project_title,
         description: project_description ?? null,
         status: "planned",
+        workspace_id: workspaceId,
       })
       .select("id")
       .single()
@@ -113,6 +126,7 @@ export async function POST(req: NextRequest) {
         notes: buildNotes(notes, delivery_deadline),
         status: "draft",
         total_ht: 0,
+        workspace_id: workspaceId,
       })
       .select("id")
       .single()
@@ -127,6 +141,7 @@ export async function POST(req: NextRequest) {
         quantity: item.quantity,
         unit: item.unit,
         unit_price: item.unit_price,
+        workspace_id: workspaceId,
       }))
     )
 

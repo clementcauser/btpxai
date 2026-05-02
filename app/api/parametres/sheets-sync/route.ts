@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getUser, getUserRole } from "@/lib/supabase/server"
+import { requireWorkspace } from "@/lib/workspaces"
 import { syncAllToSheets } from "@/lib/sheets"
 
 function requireBureauOrAdmin(role?: string | null) {
@@ -14,7 +15,8 @@ export async function POST(): Promise<NextResponse> {
   }
 
   try {
-    const { results, syncedAt, hasError } = await syncAllToSheets()
+    const { workspaceId } = await requireWorkspace(user.id)
+    const { results, syncedAt, hasError } = await syncAllToSheets(workspaceId)
     return NextResponse.json({ results, syncedAt, hasError }, { status: hasError ? 207 : 200 })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)

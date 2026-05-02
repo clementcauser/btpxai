@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
+import { requireWorkspace } from "@/lib/workspaces"
 import {
   updateQuote,
   addQuoteItem,
@@ -35,6 +36,9 @@ export async function saveQuoteAction(
   try {
     const parsed = SaveInputSchema.parse(input)
     const supabase = await createClient()
+    const user = await getUser()
+    if (!user) return { success: false, error: "Non autorisé" }
+    const { workspaceId } = await requireWorkspace(user.id)
 
     for (const id of parsed.deletedItemIds) {
       await deleteQuoteItem(supabase, id, parsed.quoteId)
@@ -49,7 +53,7 @@ export async function saveQuoteAction(
           unit: item.unit ?? null,
         })
       } else {
-        await addQuoteItem(supabase, {
+        await addQuoteItem(supabase, workspaceId, {
           quote_id: parsed.quoteId,
           label: item.label,
           quantity: item.quantity,
