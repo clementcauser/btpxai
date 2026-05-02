@@ -1,0 +1,16 @@
+name: Cron - Quote Reminders
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    name: Send quote reminders (J+7, J+14, payment)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call API
+        run: |
+          curl -f -s -X GET "${{ secrets.APP_URL }}/api/cron/quote-reminders" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
