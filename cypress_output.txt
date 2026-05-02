@@ -1,0 +1,149 @@
+Warning: The allowCypressEnv configuration option is enabled. This allows any browser code to read values from Cypress.env(). This is insecure and will be removed in a future major version.
+
+1. Replace Cypress.env() calls with cy.env() (for sensitive values) or Cypress.expose() (for public configuration)
+2. Set allowCypressEnv: false in your Cypress configuration to disable Cypress.env()
+
+Learn more: https://on.cypress.io/cypress-env-migration
+
+
+================================================================================
+
+  (Run Starting)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Cypress:        15.14.1                                                                        │
+  │ Browser:        Electron 138 (headless)                                                        │
+  │ Node Version:   v22.17.1 (/Users/clement/.nvm/versions/node/v22.17.1/bin/node)                 │
+  │ Specs:          1 found (admin-settings.cy.ts)                                                 │
+  │ Searched:       cypress/e2e/admin-settings.cy.ts                                               │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                    
+  Running:  admin-settings.cy.ts                                                            (1 of 1)
+
+
+  Page /parametres — accès et navigation
+    ✓ redirige un utilisateur bureau vers /dashboard (1318ms)
+    1) permet à un admin d'accéder à /parametres
+    ✓ affiche le sous-titre administration (394ms)
+
+  Page /parametres — navigation par onglets
+    2) affiche l'onglet Entreprise par défaut
+    3) navigue vers l'onglet Automatisations
+    4) navigue vers l'onglet Intégrations
+    5) navigue vers l'onglet Équipe
+
+  Page /parametres — informations entreprise
+    6) affiche les champs du formulaire
+    7) sauvegarde les informations et affiche la confirmation
+    8) persiste la valeur saisie dans le champ après sauvegarde
+
+  Page /parametres — CGV
+    9) sauvegarde le texte des CGV
+
+  Page /parametres — relances automatiques
+    10) "before each" hook for "peut basculer le toggle relances"
+
+  Page /parametres — gestion des utilisateurs
+    11) "before each" hook for "affiche le formulaire d'invitation"
+
+
+  2 passing (1m)
+  11 failing
+
+  1) Page /parametres — accès et navigation
+       permet à un admin d'accéder à /parametres:
+
+      Timed out retrying after 4000ms
+      + expected - actual
+
+      -'Entreprises'
+      +'Paramètres'
+      
+      at Context.eval (webpack://btpxai/./cypress/e2e/admin-settings.cy.ts:30:17)
+
+  2) Page /parametres — navigation par onglets
+       affiche l'onglet Entreprise par défaut:
+     AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-testid='tab-entreprise']`, but never found it.
+      at Context.eval (webpack://btpxai/./cypress/e2e/admin-settings.cy.ts:48:45)
+
+  3) Page /parametres — navigation par onglets
+       navigue vers l'onglet Automatisations:
+     AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-testid='tab-automatisations']`, but never found it.
+      at Context.eval (webpack://btpxai/./cypress/e2e/admin-settings.cy.ts:53:7)
+
+  4) Page /parametres — navigation par onglets
+       navigue vers l'onglet Intégrations:
+     AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-testid='tab-integrations']`, but never found it.
+      at Context.eval (webpack://btpxai/./cypress/e2e/admin-settings.cy.ts:58:7)
+
+  5) Page /parametres — navigation par onglets
+       navigue vers l'onglet Équipe:
+     AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-testid='tab-equipe']`, but never found it.
+      at Context.eval (webpack://btpxai/./cypress/e2e/admin-settings.cy.ts:63:7)
+
+  6) Page /parametres — informations entreprise
+       affiche les champs du formulaire:
+     AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-testid='company-name-input']`, but never found it.
+      at Context.eval (webpack://btpxai/./cypress/e2e/admin-settings.cy.ts:81:49)
+
+  7) Page /parametres — informations entreprise
+       sauvegarde les informations et affiche la confirmation:
+     AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-testid='company-name-input']`, but never found it.
+      at Context.eval (webpack://btpxai/./cypress/e2e/admin-settings.cy.ts:87:7)
+
+  8) Page /parametres — informations entreprise
+       persiste la valeur saisie dans le champ après sauvegarde:
+     AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-testid='company-name-input']`, but never found it.
+      at Context.eval (webpack://btpxai/./cypress/e2e/admin-settings.cy.ts:96:7)
+
+  9) Page /parametres — CGV
+       sauvegarde le texte des CGV:
+     AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-testid='cgv-textarea']`, but never found it.
+      at Context.eval (webpack://btpxai/./cypress/e2e/admin-settings.cy.ts:115:7)
+
+  10) Page /parametres — relances automatiques
+       "before each" hook for "peut basculer le toggle relances":
+     AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-testid='tab-automatisations']`, but never found it.
+
+Because this error occurred during a `before each` hook we are skipping the remaining tests in the current suite: `Page /parametres — relances...`
+      at Context.eval (webpack://btpxai/./cypress/e2e/admin-settings.cy.ts:127:7)
+
+  11) Page /parametres — gestion des utilisateurs
+       "before each" hook for "affiche le formulaire d'invitation":
+     AssertionError: Timed out retrying after 4000ms: Expected to find element: `[data-testid='tab-equipe']`, but never found it.
+
+Because this error occurred during a `before each` hook we are skipping the remaining tests in the current suite: `Page /parametres — gestion ...`
+      at Context.eval (webpack://btpxai/./cypress/e2e/admin-settings.cy.ts:158:7)
+
+
+
+
+  (Results)
+
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Tests:        17                                                                               │
+  │ Passing:      2                                                                                │
+  │ Failing:      11                                                                               │
+  │ Pending:      0                                                                                │
+  │ Skipped:      4                                                                                │
+  │ Screenshots:  0                                                                                │
+  │ Video:        false                                                                            │
+  │ Duration:     1 minute, 0 seconds                                                              │
+  │ Spec Ran:     admin-settings.cy.ts                                                             │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+
+  (Run Finished)
+
+
+       Spec                                              Tests  Passing  Failing  Pending  Skipped  
+  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ ✖  admin-settings.cy.ts                     01:00       17        2       11        -        4 │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘
+    ✖  1 of 1 failed (100%)                     01:00       17        2       11        -        4  
+

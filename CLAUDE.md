@@ -38,7 +38,11 @@ Système agentique pour une petite entreprise de métallerie familiale. L'object
 ```
 app/                        # App Router Next.js
   (auth)/                   # Routes publiques (login)
-  (bureau)/                 # Routes rôle bureau
+  (admin)/                  # Routes rôle admin uniquement
+    admin/
+      entreprises/          # Liste des workspaces (CRUD)
+      utilisateurs/         # Liste des utilisateurs (CRUD)
+  (bureau)/                 # Routes rôle bureau (admin N'A PAS accès)
     dashboard/
     devis/
     clients/
@@ -47,12 +51,19 @@ app/                        # App Router Next.js
   (terrain)/                # Routes rôle ouvrier
     terrain/
   api/                      # API Routes
+    admin/
+      workspaces/           # CRUD workspaces (admin uniquement)
+      users/                # CRUD utilisateurs (admin uniquement)
     agents/
       devis/
       email/
     terrain/
 
 components/
+  admin/                    # Composants du dashboard admin
+    admin-sidebar.tsx       # Navigation latérale admin
+    workspaces-list.tsx     # Liste + modales CRUD entreprises
+    users-list.tsx          # Liste + modales CRUD utilisateurs
   layout/                   # Sidebar, navigation, layouts
   ui/                       # Composants Shadcn/ui
 
@@ -73,6 +84,9 @@ types/
   index.ts                  # Types métier (Quote, QuoteItem, etc.)
 
 agents/                     # Prompts et logique agentique
+
+scripts/
+  seed-admin.ts             # Création du premier admin (utilise env vars)
 
 docs/
   schema.md                 # Documentation du schéma BDD
@@ -110,11 +124,22 @@ materiaux_requests -- id, project_id, user_id, label, quantity, urgency, status,
 
 ### Rôles
 
-- `admin` — accès total, gestion des utilisateurs
-- `bureau` — devis, clients, inbox, dashboard
-- `ouvrier` — interface terrain uniquement
+- `admin` — dashboard admin uniquement (`/admin/*`), gestion des workspaces et utilisateurs plateforme. **N'a PAS accès aux pages bureau ou terrain.**
+- `bureau` — devis, clients, inbox, dashboard (`/dashboard`, `/devis`, etc.)
+- `ouvrier` — interface terrain uniquement (`/terrain`)
 
 Le rôle est stocké dans `user.user_metadata.role`. Pour l'assigner, utiliser le dashboard Supabase ou le service role client : `supabaseService.auth.admin.updateUserById(id, { user_metadata: { role: 'bureau' } })`.
+
+### Routing par rôle (middleware)
+
+| Rôle    | Pages autorisées          | Redirection si autre page      |
+| ------- | ------------------------- | ------------------------------ |
+| admin   | `/admin/*`                | → `/admin` (depuis bureau/terrain) |
+| bureau  | `/dashboard`, `/devis`, etc. | → `/profil`               |
+| ouvrier | `/terrain/*`              | → `/profil`                    |
+
+- Connexion admin : redirigé vers `/admin` (pas `/dashboard`)
+- Connexion bureau/ouvrier : redirigé vers `/dashboard` ou `/terrain`
 
 ### Règles
 
@@ -122,6 +147,46 @@ Le rôle est stocké dans `user.user_metadata.role`. Pour l'assigner, utiliser l
 - Côté server : `getUser()` et `getUserRole()` depuis `lib/supabase/server.ts`
 - Côté client : `createClient()` depuis `lib/supabase/client.ts` puis `supabase.auth.signInWithPassword()` / `signOut()`
 - Ne jamais exposer le `SERVICE_ROLE_KEY` côté client
+
+---
+
+## Dashboard Admin (`/admin`)
+
+Espace réservé exclusivement au rôle `admin`. Séparé des routes bureau et terrain.
+
+### Pages
+
+- **`/admin/entreprises`** — Liste de tous les workspaces (CRUD complet)
+  - Créer un workspace (nom + slug)
+  - Modifier un workspace
+  - Supprimer un workspace
+- **`/admin/utilisateurs`** — Liste de tous les utilisateurs Supabase Auth (CRUD complet)
+  - Créer un utilisateur (email, nom, rôle, mot de passe optionnel)
+  - Modifier un utilisateur (email, nom, rôle)
+  - Supprimer un utilisateur (avec protection : impossible de supprimer son propre compte)
+
+### API Routes admin
+
+- `GET /api/admin/workspaces` — liste des workspaces
+- `POST /api/admin/workspaces` — créer un workspace
+- `PATCH /api/admin/workspaces/[id]` — modifier un workspace
+- `DELETE /api/admin/workspaces/[id]` — supprimer un workspace
+- `GET /api/admin/users` — liste des utilisateurs
+- `POST /api/admin/users` — créer un utilisateur
+- `PATCH /api/admin/users/[id]` — modifier un utilisateur
+- `DELETE /api/admin/users/[id]` — supprimer un utilisateur
+
+Toutes ces routes vérifient `role === "admin"` avant d'agir (via `requireAdmin()`).
+
+### Script seed admin
+
+```bash
+# Variables requises :
+SEED_ADMIN_EMAIL=admin@exemple.com \
+SEED_ADMIN_PASSWORD=motdepasse123 \
+SEED_ADMIN_NAME="Admin" \
+npx tsx scripts/seed-admin.ts
+```
 
 ---
 
@@ -215,7 +280,12 @@ npm run test:e2e
 - Flow devis complet : brief → génération → édition → envoi email
 - Flow inbox : réception → classification → réponse
 - Flow terrain : note vocale + photo + signalement problème
-- Flow admin : invitation utilisateur + changement de rôle
+- Flow admin settings : invitation utilisateur + changement de rôle (parametres)
+- **Flow admin dashboard** (`cypress/e2e/admin-dashboard.cy.ts`) :
+  - Accès et redirections par rôle (admin/bureau/ouvrier)
+  - Redirection admin hors bureau/terrain → `/admin`
+  - CRUD entreprises (workspaces) avec API mockée
+  - CRUD utilisateurs avec API mockée
 - CI GitHub Actions sur chaque PR
 
 ---
@@ -240,6 +310,11 @@ RESEND_API_KEY=
 
 # App
 NEXT_PUBLIC_APP_URL=
+
+# Seed admin (script scripts/seed-admin.ts uniquement)
+SEED_ADMIN_EMAIL=
+SEED_ADMIN_PASSWORD=
+SEED_ADMIN_NAME=
 ```
 
 ---
