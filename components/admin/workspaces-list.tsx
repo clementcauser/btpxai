@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Pencil, Trash2, Building2, AlertTriangle } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -17,13 +17,19 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog"
-
 type Workspace = {
   id: string
   name: string
   slug: string
+  owner_id: string | null
   created_at: string
   updated_at: string
+}
+
+type UserOption = {
+  id: string
+  email: string
+  name: string | null
 }
 
 const workspaceSchema = z.object({
@@ -33,12 +39,54 @@ const workspaceSchema = z.object({
     .min(1, "Slug requis")
     .max(60)
     .regex(/^[a-z0-9-]+$/, "Lettres minuscules, chiffres et tirets uniquement"),
+  owner_id: z.string().uuid().nullable().optional(),
 })
 
 type WorkspaceForm = z.infer<typeof workspaceSchema>
 
-function WorkspaceFormFields({ form }: { form: ReturnType<typeof useForm<WorkspaceForm>> }) {
-  const { register, formState: { errors } } = form
+const NONE = ""
+
+function OwnerSelect({
+  users,
+  value,
+  onChange,
+}: {
+  users: UserOption[]
+  value: string | null | undefined
+  onChange: (v: string | null) => void
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-white/70 text-xs font-mono tracking-wider uppercase">Owner</Label>
+      <select
+        value={value ?? NONE}
+        onChange={(e) => onChange(e.target.value || null)}
+        className="w-full h-9 rounded-md border px-3 text-sm font-mono bg-[#080A0F] text-white focus:outline-none focus:ring-1 focus:ring-[#4F8EF7]"
+        style={{ borderColor: "#1A1E2A" }}
+        data-testid="workspace-owner-select"
+      >
+        <option value={NONE} style={{ color: "rgba(255,255,255,0.4)" }}>
+          Aucun owner
+        </option>
+        {users.map((u) => (
+          <option key={u.id} value={u.id}>
+            {u.name ? `${u.name} (${u.email})` : u.email}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+function WorkspaceFormFields({
+  form,
+  users,
+}: {
+  form: ReturnType<typeof useForm<WorkspaceForm>>
+  users: UserOption[]
+}) {
+  const { register, formState: { errors }, setValue, watch } = form
+  const ownerId = watch("owner_id")
   return (
     <>
       <div className="space-y-1.5">
@@ -68,30 +116,50 @@ function WorkspaceFormFields({ form }: { form: ReturnType<typeof useForm<Workspa
           Lettres minuscules, chiffres et tirets uniquement.
         </p>
       </div>
+      <OwnerSelect
+        users={users}
+        value={ownerId}
+        onChange={(v) => setValue("owner_id", v)}
+      />
     </>
   )
 }
 
 export function WorkspacesList({ initialWorkspaces }: { initialWorkspaces: Workspace[] }) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>(initialWorkspaces)
+  const [users, setUsers] = useState<UserOption[]>([])
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Workspace | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Workspace | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
+  useEffect(() => {
+    fetch("/api/admin/users")
+      .then((r) => r.json() as Promise<{ users?: UserOption[] }>)
+      .then(({ users: list }) => setUsers(list ?? []))
+      .catch(() => {})
+  }, [])
+
   const createForm = useForm<WorkspaceForm>({
     resolver: zodResolver(workspaceSchema),
-    defaultValues: { name: "", slug: "" },
+    defaultValues: { name: "", slug: "", owner_id: null },
   })
 
   const editForm = useForm<WorkspaceForm>({
     resolver: zodResolver(workspaceSchema),
   })
 
+  function ownerLabel(id: string | null) {
+    if (!id) return null
+    const u = users.find((u) => u.id === id)
+    if (!u) return id
+    return u.name ?? u.email
+  }
+
   function openEdit(ws: Workspace) {
     setEditTarget(ws)
-    editForm.reset({ name: ws.name, slug: ws.slug })
+    editForm.reset({ name: ws.name, slug: ws.slug, owner_id: ws.owner_id })
   }
 
   async function handleCreate(data: WorkspaceForm) {
@@ -190,10 +258,10 @@ export function WorkspacesList({ initialWorkspaces }: { initialWorkspaces: Works
 
         {/* Column labels */}
         <div
-          className="grid grid-cols-[1fr_160px_160px_96px] px-5 py-2.5"
+          className="grid grid-cols-[1fr_160px_160px_160px_96px] px-5 py-2.5"
           style={{ borderBottom: "1px solid #1A1E2A" }}
         >
-          {["Nom", "Slug", "Créé le", "Actions"].map((h) => (
+          {["Nom", "Slug", "Owner", "Créé le", "Actions"].map((h) => (
             <span
               key={h}
               className="text-[10px] font-mono tracking-widest uppercase"
@@ -216,7 +284,7 @@ export function WorkspacesList({ initialWorkspaces }: { initialWorkspaces: Works
           workspaces.map((ws: Workspace, i: number) => (
             <div
               key={ws.id}
-              className="grid grid-cols-[1fr_160px_160px_96px] items-center px-5 py-4 transition-colors"
+              className="grid grid-cols-[1fr_160px_160px_160px_96px] items-center px-5 py-4 transition-colors"
               style={{
                 borderBottom: i < workspaces.length - 1 ? "1px solid #1A1E2A" : undefined,
               }}
@@ -233,6 +301,9 @@ export function WorkspacesList({ initialWorkspaces }: { initialWorkspaces: Works
                 style={{ background: "rgba(79,142,247,0.1)", color: "#4F8EF7", border: "1px solid rgba(79,142,247,0.2)" }}
               >
                 {ws.slug}
+              </span>
+              <span className="text-xs font-mono truncate" style={{ color: ws.owner_id ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.2)" }}>
+                {ownerLabel(ws.owner_id) ?? "—"}
               </span>
               <span className="text-xs font-mono" style={{ color: "rgba(255,255,255,0.4)" }}>
                 {new Date(ws.created_at).toLocaleDateString("fr-FR")}
@@ -274,7 +345,7 @@ export function WorkspacesList({ initialWorkspaces }: { initialWorkspaces: Works
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={createForm.handleSubmit(handleCreate)} className="space-y-4 mt-2">
-            <WorkspaceFormFields form={createForm} />
+            <WorkspaceFormFields form={createForm} users={users} />
             <DialogFooter className="pt-2">
               <Button
                 type="button"
@@ -309,7 +380,7 @@ export function WorkspacesList({ initialWorkspaces }: { initialWorkspaces: Works
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={editForm.handleSubmit(handleEdit)} className="space-y-4 mt-2">
-            <WorkspaceFormFields form={editForm} />
+            <WorkspaceFormFields form={editForm} users={users} />
             <DialogFooter className="pt-2">
               <Button
                 type="button"

@@ -11,6 +11,7 @@ const updateSchema = z.object({
     .max(60)
     .regex(/^[a-z0-9-]+$/, "Slug : lettres minuscules, chiffres et tirets uniquement")
     .optional(),
+  owner_id: z.string().uuid("UUID invalide").nullable().optional(),
 })
 
 async function requireAdmin() {

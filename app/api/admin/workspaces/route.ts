@@ -10,6 +10,7 @@ const createSchema = z.object({
     .min(1, "Slug requis")
     .max(60)
     .regex(/^[a-z0-9-]+$/, "Slug : lettres minuscules, chiffres et tirets uniquement"),
+  owner_id: z.string().uuid("UUID invalide").nullable().optional(),
 })
 
 async function requireAdmin() {
@@ -26,7 +27,7 @@ export async function GET() {
 
   const { data, error } = await supabaseService
     .from("workspaces")
-    .select("id, name, slug, created_at, updated_at")
+    .select("id, name, slug, owner_id, created_at, updated_at")
     .order("created_at", { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -44,11 +45,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 })
   }
 
-  const { name, slug } = parsed.data
+  const { name, slug, owner_id } = parsed.data
 
   const { data, error } = await supabaseService
     .from("workspaces")
-    .insert({ name, slug })
+    .insert({ name, slug, owner_id: owner_id ?? null })
     .select()
     .single()
 

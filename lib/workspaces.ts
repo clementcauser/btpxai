@@ -7,6 +7,7 @@ export type WorkspaceRole = Database["public"]["Enums"]["workspace_role"]
 export type WorkspaceContext = {
   workspaceId: string
   role: WorkspaceRole
+  isOwner: boolean
 }
 
 export class WorkspaceError extends Error {
@@ -31,7 +32,7 @@ export async function requireWorkspace(userId: string): Promise<WorkspaceContext
     const cookieStore = await cookies()
     const cypressUser = cookieStore.get("cypress-test-user")?.value
     if (cypressUser) {
-      return { workspaceId: CYPRESS_TEST_WORKSPACE_ID, role: "admin" }
+      return { workspaceId: CYPRESS_TEST_WORKSPACE_ID, role: "admin", isOwner: false }
     }
   }
 
@@ -60,5 +61,15 @@ export async function requireWorkspace(userId: string): Promise<WorkspaceContext
 
   if (!data) throw new WorkspaceError()
 
-  return { workspaceId: data.workspace_id, role: data.role as WorkspaceRole }
+  const { data: workspace } = await supabaseService
+    .from("workspaces")
+    .select("owner_id")
+    .eq("id", data.workspace_id)
+    .single()
+
+  return {
+    workspaceId: data.workspace_id,
+    role: data.role as WorkspaceRole,
+    isOwner: workspace?.owner_id === userId,
+  }
 }
