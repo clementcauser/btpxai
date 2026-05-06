@@ -46,15 +46,23 @@ app/                        # App Router Next.js
     parametres/
   (terrain)/                # Routes rôle ouvrier
     terrain/
+  (superadmin)/             # Routes rôle super_admin
+    superadmin/
+      workspaces/           # Liste des espaces de travail (entreprises)
+      users/                # Liste des utilisateurs
   api/                      # API Routes
     agents/
       devis/
       email/
     terrain/
+    superadmin/
+      workspaces/           # CRUD workspaces (GET, POST, PUT, DELETE)
+      users/                # CRUD users via Supabase Auth Admin (GET, POST, PUT, DELETE)
 
 components/
   layout/                   # Sidebar, navigation, layouts
   ui/                       # Composants Shadcn/ui
+  superadmin/               # Tables, modales et dialogs du superadmin
 
 lib/
   supabase/
