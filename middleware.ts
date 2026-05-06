@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 
 const BUREAU_PATHS = ["/dashboard", "/devis", "/clients", "/inbox", "/parametres"]
 const TERRAIN_PATHS = ["/terrain"]
+const SUPERADMIN_PATHS = ["/superadmin"]
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -31,7 +32,7 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user: supabaseUser } } = await supabase.auth.getUser()
-  
+
   let user = supabaseUser
   let role = user?.user_metadata?.role as string | undefined
 
@@ -46,17 +47,37 @@ export async function middleware(request: NextRequest) {
     } else if (testUserCookie === "bureau") {
       user = { id: "test-user-bureau", email: "bureau@test.com", user_metadata: { role: "bureau" } } as any
       role = "bureau"
+    } else if (testUserCookie === "super_admin") {
+      user = { id: "test-superadmin-id", email: "superadmin@test.com", user_metadata: { role: "super_admin" } } as any
+      role = "super_admin"
     }
   }
 
   if (pathname === "/login") {
-    return user
-      ? NextResponse.redirect(new URL("/dashboard", request.url))
-      : response
+    if (!user) return response
+    if (role === "super_admin") return NextResponse.redirect(new URL("/superadmin/workspaces", request.url))
+    return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
   if (!user) {
     return NextResponse.redirect(new URL("/login", request.url))
+  }
+
+  // Superadmin paths: super_admin only
+  if (SUPERADMIN_PATHS.some((p) => pathname.startsWith(p))) {
+    if (role !== "super_admin") {
+      return NextResponse.redirect(new URL("/dashboard", request.url))
+    }
+  }
+
+  // Bureau/terrain paths: block super_admin
+  if (
+    BUREAU_PATHS.some((p) => pathname.startsWith(p)) ||
+    TERRAIN_PATHS.some((p) => pathname.startsWith(p))
+  ) {
+    if (role === "super_admin") {
+      return NextResponse.redirect(new URL("/superadmin/workspaces", request.url))
+    }
   }
 
   if (BUREAU_PATHS.some((p) => pathname.startsWith(p))) {
