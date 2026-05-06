@@ -16,6 +16,8 @@ import {
   syncProjects,
   syncMonthlyRevenue,
   getLastSyncAt,
+  getSpreadsheetUrl,
+  extractSpreadsheetId,
   syncAllToSheets,
 } from "@/lib/sheets"
 
@@ -37,6 +39,9 @@ function makeBuilder(result: { data: unknown; error: unknown }) {
 const futureDate = new Date(Date.now() + 3600 * 1000).toISOString()
 const pastDate = new Date(Date.now() - 1000).toISOString()
 
+const TEST_WORKSPACE_ID = "workspace-123"
+const TEST_SHEETS_URL = "https://docs.google.com/spreadsheets/d/test-sheet-id/edit"
+
 function mockValidConnection(overrides: Record<string, unknown> = {}) {
   return makeBuilder({
     data: {
@@ -50,12 +55,58 @@ function mockValidConnection(overrides: Record<string, unknown> = {}) {
   })
 }
 
+function mockSpreadsheetUrlSetting(url: string | null = TEST_SHEETS_URL) {
+  return makeBuilder({
+    data: url !== null ? { value: url } : null,
+    error: null,
+  })
+}
+
 function mockOkSheetsResponse() {
   return { ok: true, text: async () => "", json: async () => ({}) }
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
+})
+
+// ── extractSpreadsheetId ──────────────────────────────────────────────────────
+
+describe("extractSpreadsheetId", () => {
+  it("extrait l'ID depuis une URL Google Sheets standard", () => {
+    const id = extractSpreadsheetId("https://docs.google.com/spreadsheets/d/abc123XYZ/edit#gid=0")
+    expect(id).toBe("abc123XYZ")
+  })
+
+  it("extrait l'ID depuis une URL sans suffixe", () => {
+    const id = extractSpreadsheetId("https://docs.google.com/spreadsheets/d/mySheetId-_456")
+    expect(id).toBe("mySheetId-_456")
+  })
+
+  it("retourne null pour une URL sans pattern spreadsheets/d/", () => {
+    const id = extractSpreadsheetId("https://docs.google.com/document/d/someDocId/edit")
+    expect(id).toBeNull()
+  })
+
+  it("retourne null pour une chaîne vide", () => {
+    expect(extractSpreadsheetId("")).toBeNull()
+  })
+})
+
+// ── getSpreadsheetUrl ─────────────────────────────────────────────────────────
+
+describe("getSpreadsheetUrl", () => {
+  it("retourne l'URL si elle est configurée", async () => {
+    mockSupabase.from.mockReturnValue(mockSpreadsheetUrlSetting(TEST_SHEETS_URL))
+    const url = await getSpreadsheetUrl(TEST_WORKSPACE_ID)
+    expect(url).toBe(TEST_SHEETS_URL)
+  })
+
+  it("retourne null si aucune URL n'est configurée", async () => {
+    mockSupabase.from.mockReturnValue(mockSpreadsheetUrlSetting(null))
+    const url = await getSpreadsheetUrl(TEST_WORKSPACE_ID)
+    expect(url).toBeNull()
+  })
 })
 
 // ── getValidAccessToken ───────────────────────────────────────────────────────
@@ -282,14 +333,14 @@ describe("getLastSyncAt", () => {
       makeBuilder({ data: { value: "2026-01-01T06:00:00.000Z" }, error: null })
     )
 
-    const result = await getLastSyncAt()
+    const result = await getLastSyncAt(TEST_WORKSPACE_ID)
     expect(result).toBe("2026-01-01T06:00:00.000Z")
   })
 
   it("retourne null si aucune valeur", async () => {
     mockSupabase.from.mockReturnValue(makeBuilder({ data: null, error: null }))
 
-    const result = await getLastSyncAt()
+    const result = await getLastSyncAt(TEST_WORKSPACE_ID)
     expect(result).toBeNull()
   })
 })
@@ -298,18 +349,19 @@ describe("getLastSyncAt", () => {
 
 describe("syncAllToSheets", () => {
   it("retourne hasError false quand toutes les syncs réussissent", async () => {
+    // getSpreadsheetUrl: URL configurée
+    const urlBuilder = mockSpreadsheetUrlSetting(TEST_SHEETS_URL)
     // getValidAccessToken: valid connection
     const connBuilder = mockValidConnection()
-    // syncQuotes: quotes data
+    // syncQuotes, syncProjects, syncMonthlyRevenue: données vides
     const quotesBuilder = makeBuilder({ data: [], error: null })
-    // syncProjects: projects data
     const projectsBuilder = makeBuilder({ data: [], error: null })
-    // syncMonthlyRevenue: quotes data
     const revenueBuilder = makeBuilder({ data: [], error: null })
     // setLastSyncAt: upsert
     const upsertBuilder = makeBuilder({ data: {}, error: null })
 
     mockSupabase.from
+      .mockReturnValueOnce(urlBuilder)      // getSpreadsheetUrl
       .mockReturnValueOnce(connBuilder)     // getValidAccessToken
       .mockReturnValueOnce(quotesBuilder)   // syncQuotes → supabase
       .mockReturnValueOnce(projectsBuilder) // syncProjects → supabase
@@ -319,7 +371,7 @@ describe("syncAllToSheets", () => {
     // 6 fetch calls: clear + write for each of the 3 sheets
     mockFetch.mockResolvedValue(mockOkSheetsResponse())
 
-    const { hasError, results } = await syncAllToSheets()
+    const { hasError, results } = await syncAllToSheets(TEST_WORKSPACE_ID)
 
     expect(hasError).toBe(false)
     expect(results).toHaveLength(3)
@@ -327,12 +379,14 @@ describe("syncAllToSheets", () => {
   })
 
   it("retourne hasError true si au moins une sync échoue", async () => {
+    const urlBuilder = mockSpreadsheetUrlSetting(TEST_SHEETS_URL)
     const connBuilder = mockValidConnection()
     const quotesBuilder = makeBuilder({ data: null, error: { message: "DB error" } })
     const projectsBuilder = makeBuilder({ data: [], error: null })
     const revenueBuilder = makeBuilder({ data: [], error: null })
 
     mockSupabase.from
+      .mockReturnValueOnce(urlBuilder)
       .mockReturnValueOnce(connBuilder)
       .mockReturnValueOnce(quotesBuilder)
       .mockReturnValueOnce(projectsBuilder)
@@ -340,10 +394,28 @@ describe("syncAllToSheets", () => {
 
     mockFetch.mockResolvedValue(mockOkSheetsResponse())
 
-    const { hasError, results } = await syncAllToSheets()
+    const { hasError, results } = await syncAllToSheets(TEST_WORKSPACE_ID)
 
     expect(hasError).toBe(true)
     const devisResult = results.find((r) => r.sheet === "Devis")
     expect(devisResult?.status).toBe("error")
+  })
+
+  it("lève une erreur si aucune URL Google Sheets n'est configurée", async () => {
+    mockSupabase.from.mockReturnValueOnce(mockSpreadsheetUrlSetting(null))
+
+    await expect(syncAllToSheets(TEST_WORKSPACE_ID)).rejects.toThrow(
+      "Aucune URL Google Sheets configurée"
+    )
+  })
+
+  it("lève une erreur si l'URL Google Sheets est invalide", async () => {
+    mockSupabase.from.mockReturnValueOnce(
+      mockSpreadsheetUrlSetting("https://not-a-google-sheets-url.com")
+    )
+
+    await expect(syncAllToSheets(TEST_WORKSPACE_ID)).rejects.toThrow(
+      "URL Google Sheets invalide"
+    )
   })
 })

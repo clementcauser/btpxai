@@ -3,6 +3,8 @@ import Link from "next/link"
 import { getUser, getUserRole } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
 import { getDashboardMetrics } from "@/lib/dashboard"
+import { getAppSetting } from "@/lib/settings"
+import { requireWorkspace } from "@/lib/workspaces"
 import { DashboardAutoRefresh } from "@/components/dashboard/auto-refresh"
 import {
   FileText,
@@ -14,6 +16,7 @@ import {
   HardHat,
   Clock,
   ArrowRight,
+  Sheet,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
@@ -35,18 +38,21 @@ const quickActions = [
     description: "Brief client → devis en quelques secondes",
     href: "/devis/nouveau",
     icon: FileText,
+    external: false,
   },
   {
     label: "Voir la messagerie",
     description: "Emails classifiés automatiquement",
     href: "/inbox",
     icon: Mail,
+    external: false,
   },
   {
     label: "Nouveau client",
     description: "Ajouter un contact au répertoire",
     href: "/clients/nouveau",
     icon: Users,
+    external: false,
   },
 ]
 
@@ -63,10 +69,21 @@ export default async function DashboardPage() {
     openAlerts: 0,
   }
 
+  let sheetsUrl: string | null = null
+
   try {
     metrics = await getDashboardMetrics(supabaseService)
   } catch {
     // Fail gracefully — show zeros
+  }
+
+  try {
+    if (user) {
+      const { workspaceId } = await requireWorkspace(user.id)
+      sheetsUrl = await getAppSetting(workspaceId, "sheets_spreadsheet_url")
+    }
+  } catch {
+    // Fail gracefully — no link shown
   }
 
   const greeting = (() => {
@@ -374,6 +391,27 @@ export default async function DashboardPage() {
               </div>
             </Link>
           ))}
+          {sheetsUrl && (
+            <a
+              href={sheetsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="dashboard-sheets-link"
+              className="group flex items-start gap-3 rounded-sm border border-border bg-card p-4 transition-all hover:border-primary/40 hover:bg-primary/5"
+            >
+              <div className="size-8 rounded-sm bg-muted flex items-center justify-center shrink-0 transition-colors group-hover:bg-primary/15">
+                <Sheet className="size-4 text-muted-foreground transition-colors group-hover:text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                  Google Sheet
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Consulter le tableau de bord Sheets
+                </p>
+              </div>
+            </a>
+          )}
         </div>
       </section>
 

@@ -91,7 +91,7 @@ export function SettingsShell({
           <>
             <RemindersSection initialSettings={settings} />
             <AutoAcknowledgmentSection initialEnabled={autoAckEnabled} />
-            <SheetsSyncSection lastSyncAt={lastSyncAt} />
+            <SheetsSyncSection lastSyncAt={lastSyncAt} sheetsSpreadsheetUrl={settings.sheets_spreadsheet_url ?? null} />
             <ReportRecipientsSection
               initialRecipients={recipients}
               initialEnabled={settings.weekly_report_enabled !== "false"}

@@ -192,7 +192,9 @@ L'interface terrain est une priorité UX critique. Les ouvriers l'utilisent sur 
 
 - Sync quotidienne via Vercel Cron
 - Source de vérité : l'application (pas le Sheet)
-- Fonctions dans `lib/sheets.ts`
+- L'URL du Google Sheet est configurée **par workspace** dans les paramètres (clé `sheets_spreadsheet_url` dans `workspace_settings`)
+- Les rôles `bureau` et `admin` peuvent accéder au lien depuis le dashboard
+- Fonctions dans `lib/sheets.ts` : `syncAllToSheets`, `getSpreadsheetUrl`, `extractSpreadsheetId`, `getLastSyncAt`
 
 ### Resend (emails transactionnels)
 

@@ -18,7 +18,6 @@ export default defineConfig({
       OPENAI_API_KEY: "test-openai-key",
       GOOGLE_CLIENT_ID: "test-google-client-id",
       GOOGLE_CLIENT_SECRET: "test-google-client-secret",
-      GOOGLE_SHEETS_SPREADSHEET_ID: "test-spreadsheet-id",
       RESEND_API_KEY: "test-resend-key",
       NEXT_PUBLIC_APP_URL: "http://localhost:3000",
     },

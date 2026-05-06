@@ -1,5 +1,19 @@
 import { supabaseService } from "@/lib/supabase/service"
-import { env } from "@/lib/env"
+
+export function extractSpreadsheetId(url: string): string | null {
+  const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)
+  return match?.[1] ?? null
+}
+
+export async function getSpreadsheetUrl(workspaceId: string): Promise<string | null> {
+  const { data } = await supabaseService
+    .from("workspace_settings")
+    .select("value")
+    .eq("workspace_id", workspaceId)
+    .eq("key", "sheets_spreadsheet_url")
+    .single()
+  return data?.value ?? null
+}
 
 const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets"
 const TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -263,7 +277,14 @@ export async function syncAllToSheets(workspaceId: string): Promise<{
   syncedAt: string
   hasError: boolean
 }> {
-  const spreadsheetId = env.GOOGLE_SHEETS_SPREADSHEET_ID
+  const spreadsheetUrl = await getSpreadsheetUrl(workspaceId)
+  if (!spreadsheetUrl) {
+    throw new Error("Aucune URL Google Sheets configurée. Renseignez-la dans les paramètres.")
+  }
+  const spreadsheetId = extractSpreadsheetId(spreadsheetUrl)
+  if (!spreadsheetId) {
+    throw new Error("URL Google Sheets invalide. Vérifiez le format dans les paramètres.")
+  }
   const token = await getValidAccessToken()
 
   const [quotesResult, projectsResult, revenueResult] = await Promise.all([
