@@ -110,7 +110,7 @@ materiaux_requests -- id, project_id, user_id, label, quantity, urgency, status,
 - Policies par rôle : `admin`, `bureau`, `ouvrier`
 - Toujours utiliser le client server-side dans les Server Components et API routes
 - Toujours utiliser le client client-side dans les Client Components
-- Les types doivent être régénérés après chaque modification du schéma : `supabase gen types typescript --local > types/supabase.ts`
+- Les types doivent être régénérés après chaque modification du schéma : `npm run db:types` (utilise le projet Supabase lié en production)
 
 ---
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-// Charge .env.test puis démarre next dev — utilisé par le script test:ci
+// Charge .env.local (Supabase prod) puis .env.test (surcharges test) et démarre next dev
 const path = require("path")
 const root = path.resolve(__dirname, "..")
 
+require("dotenv").config({ path: path.join(root, ".env.local") })
 require("dotenv").config({ path: path.join(root, ".env.test") })
 
 const { spawn } = require("child_process")
