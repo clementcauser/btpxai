@@ -118,7 +118,8 @@ materiaux_requests -- id, project_id, user_id, label, quantity, urgency, status,
 
 ### Rôles
 
-- `admin` — accès total, gestion des utilisateurs
+- `super_admin` — accès global cross-workspace, interface `/superadmin/*` uniquement (gestion des entreprises et utilisateurs)
+- `admin` — accès total au workspace, gestion des utilisateurs du workspace
 - `bureau` — devis, clients, inbox, dashboard
 - `ouvrier` — interface terrain uniquement
 
@@ -224,6 +225,7 @@ npm run test:e2e
 - Flow inbox : réception → classification → réponse
 - Flow terrain : note vocale + photo + signalement problème
 - Flow admin : invitation utilisateur + changement de rôle
+- Flow superadmin : accès `/superadmin/workspaces` et `/superadmin/users`, CRUD workspaces et users, blocage sur les pages bureau/terrain
 - CI GitHub Actions sur chaque PR
 
 ---
@@ -248,6 +250,14 @@ RESEND_API_KEY=
 
 # App
 NEXT_PUBLIC_APP_URL=
+
+# Seed script (npx tsx scripts/seed-admin.ts)
+SEED_ADMIN_EMAIL=
+SEED_ADMIN_PASSWORD=
+SEED_ADMIN_NAME=
+SEED_SUPERADMIN_EMAIL=
+SEED_SUPERADMIN_PASSWORD=
+SEED_SUPERADMIN_NAME=
 ```
 
 ---
