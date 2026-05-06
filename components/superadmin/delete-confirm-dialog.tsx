@@ -1,0 +1,78 @@
+"use client"
+
+import { useTransition } from "react"
+import { toast } from "sonner"
+import { Loader2, AlertTriangle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
+type Props = {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  title: string
+  description: string
+  onConfirm: () => Promise<void>
+  successMessage?: string
+}
+
+export function DeleteConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  onConfirm,
+  successMessage = "Supprimé",
+}: Props) {
+  const [isPending, startTransition] = useTransition()
+
+  function handleDelete() {
+    startTransition(async () => {
+      try {
+        await onConfirm()
+        toast.success(successMessage)
+        onOpenChange(false)
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Une erreur est survenue")
+      }
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm bg-card border-border p-0 overflow-hidden">
+        <div className="h-1 w-full bg-gradient-to-r from-destructive/60 via-destructive to-destructive/60" />
+        <div className="px-6 pt-5 pb-6">
+          <DialogHeader className="mb-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="size-10 rounded-sm bg-destructive/10 border border-destructive/30 flex items-center justify-center shrink-0">
+                <AlertTriangle className="size-4 text-destructive" />
+              </div>
+              <DialogTitle className="font-heading text-xl font-bold tracking-wide uppercase text-foreground">
+                {title}
+              </DialogTitle>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+          </DialogHeader>
+          <div className="flex gap-3">
+            <Button
+              variant="ghost"
+              className="flex-1 border border-border hover:bg-accent"
+              onClick={() => onOpenChange(false)}
+              disabled={isPending}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="flex-1 bg-destructive text-white hover:bg-destructive/90 font-heading tracking-wider uppercase"
+              onClick={handleDelete}
+              disabled={isPending}
+              data-testid="delete-confirm-btn"
+            >
+              {isPending ? <Loader2 className="size-4 animate-spin" /> : "Supprimer"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
