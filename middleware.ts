@@ -36,7 +36,14 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user: supabaseUser } } = await supabase.auth.getUser()
+  let supabaseUser = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    supabaseUser = data.user
+  } catch {
+    console.error('[middleware] supabase.auth.getUser() threw — failing closed')
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
 
   let user = supabaseUser
   let role = user?.user_metadata?.role as string | undefined
