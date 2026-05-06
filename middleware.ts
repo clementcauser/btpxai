@@ -6,6 +6,11 @@ const TERRAIN_PATHS = ["/terrain"]
 const SUPERADMIN_PATHS = ["/superadmin"]
 
 export async function middleware(request: NextRequest) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error('[middleware] Missing Supabase env vars — skipping auth')
+    return NextResponse.next()
+  }
+
   const { pathname } = request.nextUrl
 
   let response = NextResponse.next({ request })
