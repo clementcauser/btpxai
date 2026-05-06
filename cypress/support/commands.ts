@@ -20,6 +20,11 @@ declare global {
        * Must be called before cy.visit() for any admin-only route.
        */
       loginAsAdmin(): Chainable<void>
+      /**
+       * Set a cookie that bypasses server-side Supabase auth as a super_admin user.
+       * Must be called before cy.visit() for any superadmin-only route.
+       */
+      loginAsSuperAdmin(): Chainable<void>
     }
   }
 }
@@ -36,4 +41,8 @@ Cypress.Commands.add("loginAsBureau", () => {
 
 Cypress.Commands.add("loginAsAdmin", () => {
   cy.setCookie("cypress-test-user", "admin", { path: "/", sameSite: "lax" })
+})
+
+Cypress.Commands.add("loginAsSuperAdmin", () => {
+  cy.setCookie("cypress-test-user", "super_admin", { path: "/", sameSite: "lax" })
 })
