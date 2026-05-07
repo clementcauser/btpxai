@@ -3,25 +3,15 @@ import "./lib/env";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["pg"],
-  webpack: (config, { nextRuntime, webpack }) => {
-    if (nextRuntime === "edge") {
-      // Transitive deps (e.g. ws via @supabase/realtime-js) reference __dirname
-      // at module evaluation time. The Edge Runtime has no __dirname global, so
-      // we polyfill it at the webpack level before the bundle runs.
-      config.plugins.push(
-        new webpack.DefinePlugin({
-          __dirname: JSON.stringify("/"),
-          __filename: JSON.stringify("/middleware.js"),
-        })
-      );
-      // Prevent optional native addons from ws from being bundled in Edge
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        bufferutil: false,
-        "utf-8-validate": false,
-      };
-    }
-    return config;
+  turbopack: {
+    // bufferutil and utf-8-validate are optional native addons for `ws`
+    // (pulled in via @supabase/realtime-js). They use __dirname at module
+    // evaluation time, which does not exist in the Edge Runtime. Alias them
+    // to an empty stub so the middleware bundle never loads their native code.
+    resolveAlias: {
+      bufferutil: "./lib/edge-stub.js",
+      "utf-8-validate": "./lib/edge-stub.js",
+    },
   },
 };
 
