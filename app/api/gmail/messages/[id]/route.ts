@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getUser, getUserRole } from "@/lib/supabase/server"
-import { getEmail, markAsRead } from "@/lib/gmail"
+import { requireWorkspace, WorkspaceError } from "@/lib/workspaces"
+import { GmailClient } from "@/lib/gmail"
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await getUser()
@@ -14,11 +15,27 @@ export async function GET(
     return NextResponse.json({ error: "Accès refusé" }, { status: 403 })
   }
 
+  let workspaceId: string
+  try {
+    const ws = await requireWorkspace(user.id)
+    workspaceId = ws.workspaceId
+  } catch (err) {
+    if (err instanceof WorkspaceError)
+      return NextResponse.json({ error: "Workspace introuvable" }, { status: 400 })
+    throw err
+  }
+
+  const connectionId = req.nextUrl.searchParams.get("connectionId")
+  if (!connectionId) {
+    return NextResponse.json({ error: "connectionId requis" }, { status: 400 })
+  }
+
   const { id } = await params
 
   try {
-    const email = await getEmail(id)
-    await markAsRead(id).catch(() => null)
+    const client = await GmailClient.forConnection(connectionId, workspaceId)
+    const email = await client.getEmail(id)
+    await client.markAsRead(id).catch(() => null)
     return NextResponse.json({ email })
   } catch (err) {
     console.error("Erreur getEmail:", err)

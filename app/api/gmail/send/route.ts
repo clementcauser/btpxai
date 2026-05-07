@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser, getUserRole } from "@/lib/supabase/server"
-import { sendEmail } from "@/lib/gmail"
+import { requireWorkspace, WorkspaceError } from "@/lib/workspaces"
+import { GmailClient } from "@/lib/gmail"
 
 const sendSchema = z.object({
+  connectionId: z.string().uuid(),
   to: z.string().email(),
   subject: z.string().min(1),
   body: z.string().min(1),
@@ -19,6 +21,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Accès refusé" }, { status: 403 })
   }
 
+  let workspaceId: string
+  try {
+    const ws = await requireWorkspace(user.id)
+    workspaceId = ws.workspaceId
+  } catch (err) {
+    if (err instanceof WorkspaceError)
+      return NextResponse.json({ error: "Workspace introuvable" }, { status: 400 })
+    throw err
+  }
+
   let body: unknown
   try {
     body = await req.json()
@@ -32,7 +44,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await sendEmail(parsed.data.to, parsed.data.subject, parsed.data.body, parsed.data.replyToMessageId)
+    const client = await GmailClient.forConnection(parsed.data.connectionId, workspaceId)
+    await client.sendEmail(
+      parsed.data.to,
+      parsed.data.subject,
+      parsed.data.body,
+      parsed.data.replyToMessageId
+    )
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error("Erreur sendEmail:", err)

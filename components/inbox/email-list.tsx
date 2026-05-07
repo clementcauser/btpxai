@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import type { EmailSummary, EmailStatusRecord, EmailStatus, EmailCategory } from "@/types"
+import type { EmailSummaryWithSource, EmailStatusRecord, EmailStatus, EmailCategory } from "@/types"
 import { EmailDetail } from "./email-detail"
 import { clearClientSummaryCache } from "./client-summary-panel"
 
@@ -48,8 +48,11 @@ const CATEGORY_CONFIG: Record<
 
 type Client = { id: string; name: string; email: string | null }
 
+type ConnectionSummary = { id: string; email: string; label: string; color: string }
+
 type Props = {
-  emails: EmailSummary[]
+  emails: EmailSummaryWithSource[]
+  connections: ConnectionSummary[]
   initialStatuses: Record<string, EmailStatusRecord>
   clients: Client[]
 }
@@ -91,7 +94,7 @@ const STATUS_CONFIG: Record<
 }
 
 function getEffectiveStatus(
-  email: EmailSummary,
+  email: EmailSummaryWithSource,
   statuses: Record<string, EmailStatusRecord>
 ): EmailStatus {
   return statuses[email.id]?.status ?? (email.isRead ? "en_cours" : "a_traiter")
@@ -111,7 +114,7 @@ function parseSenderName(from: string): { name: string; address: string } {
   return { name: from, address: from }
 }
 
-export function EmailList({ emails, initialStatuses, clients }: Props) {
+export function EmailList({ emails, connections, initialStatuses, clients }: Props) {
   const [statuses, setStatuses] =
     useState<Record<string, EmailStatusRecord>>(initialStatuses)
   const [classifications, setClassifications] = useState<Record<string, EmailCategory>>(() =>
@@ -125,6 +128,7 @@ export function EmailList({ emails, initialStatuses, clients }: Props) {
   )
   const [search, setSearch] = useState("")
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("all")
+  const [connectionFilter, setConnectionFilter] = useState<string | null>(null)
   const [, startTransition] = useTransition()
 
   useEffect(() => {
@@ -152,7 +156,7 @@ export function EmailList({ emails, initialStatuses, clients }: Props) {
   }, [])
 
   const updateStatus = useCallback(
-    (email: EmailSummary, status: EmailStatus, clientId?: string | null) => {
+    (email: EmailSummaryWithSource, status: EmailStatus, clientId?: string | null) => {
       const optimistic: EmailStatusRecord = {
         id: statuses[email.id]?.id ?? "",
         message_id: email.id,
@@ -194,11 +198,13 @@ export function EmailList({ emails, initialStatuses, clients }: Props) {
       acc[s] = (acc[s] ?? 0) + 1
       return acc
     },
-    {}
+    {} as Record<string, number>
   )
 
   const filtered = emails.filter((e) => {
     if (activeFilter !== "all" && getEffectiveStatus(e, statuses) !== activeFilter)
+      return false
+    if (connectionFilter && e.connectionId !== connectionFilter)
       return false
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -211,11 +217,53 @@ export function EmailList({ emails, initialStatuses, clients }: Props) {
     return true
   })
 
-  const selectedEmail = emails.find((e) => e.id === selectedId) ?? null
   const selectedStatus = selectedId ? statuses[selectedId] : null
+
+  const selectedEmail = emails.find((e) => e.id === selectedId) ?? null
+  const selectedConnectionId = selectedEmail?.connectionId ?? null
 
   return (
     <div className="flex flex-col gap-0 min-h-[600px]">
+      {/* Mailbox filter chips — only shown when multiple connections */}
+      {connections.length > 1 && (
+        <div className="flex items-center gap-2 px-1 pb-3 flex-wrap">
+          <button
+            onClick={() => setConnectionFilter(null)}
+            className={cn(
+              "inline-flex items-center gap-1.5 text-[11px] font-mono tracking-wider uppercase px-3 py-1.5 border transition-colors",
+              connectionFilter === null
+                ? "border-foreground/40 text-foreground bg-foreground/8"
+                : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
+            )}
+          >
+            Toutes
+            <span className="opacity-50 text-[10px]">{emails.length}</span>
+          </button>
+          {connections.map((conn) => {
+            const count = emails.filter((e) => e.connectionId === conn.id).length
+            return (
+              <button
+                key={conn.id}
+                onClick={() => setConnectionFilter((prev) => prev === conn.id ? null : conn.id)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 text-[11px] font-mono tracking-wider uppercase px-3 py-1.5 border transition-colors",
+                  connectionFilter === conn.id
+                    ? "border-foreground/40 text-foreground bg-foreground/8"
+                    : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
+                )}
+              >
+                <span
+                  className="size-2 rounded-full shrink-0"
+                  style={{ backgroundColor: conn.color }}
+                />
+                {conn.label}
+                <span className="opacity-50 text-[10px]">{count}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {/* Status tabs */}
       <div
         data-testid="status-filters"
@@ -378,6 +426,18 @@ export function EmailList({ emails, initialStatuses, clients }: Props) {
                     >
                       {cfg.label}
                     </span>
+                    {connections.length > 1 && (
+                      <span
+                        className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 border border-border/60 text-muted-foreground bg-transparent"
+                        title={email.connectionEmail}
+                      >
+                        <span
+                          className="size-1.5 rounded-full shrink-0"
+                          style={{ backgroundColor: email.connectionColor }}
+                        />
+                        {email.connectionLabel}
+                      </span>
+                    )}
                     {classifications[email.id] && (
                       <span
                         data-testid="classification-badge-list"
@@ -404,10 +464,11 @@ export function EmailList({ emails, initialStatuses, clients }: Props) {
 
         {/* Detail panel */}
         <div className="flex-1 hidden lg:block overflow-hidden">
-          {selectedId && selectedEmail ? (
+          {selectedId && selectedEmail && selectedConnectionId ? (
             <EmailDetail
               key={selectedId}
               messageId={selectedId}
+              connectionId={selectedConnectionId}
               email={selectedEmail}
               statusRecord={selectedStatus ?? null}
               clients={clients}

@@ -44,19 +44,24 @@ export default async function ParametresPage({
 
   const { workspaceId } = await requireWorkspace(user.id)
 
-  const [settings, { data: connection }, autoAckEnabled, lastSyncAt, { data: usersData }] =
+  const [settings, { data: connectionsData }, autoAckEnabled, lastSyncAt, { data: usersData }] =
     await Promise.all([
       getMultipleSettings(workspaceId, SETTINGS_KEYS),
       supabaseService
         .from("gmail_connections")
-        .select("email, created_at")
+        .select("id, email, label")
         .eq("workspace_id", workspaceId)
-        .limit(1)
-        .single(),
+        .order("created_at", { ascending: true }),
       getAutoAcknowledgmentEnabled(workspaceId),
       getLastSyncAt(workspaceId),
       supabaseService.auth.admin.listUsers({ perPage: 200 }),
     ])
+
+  const connections = ((connectionsData ?? []) as unknown) as {
+    id: string
+    email: string
+    label: string
+  }[]
 
   const users = (usersData?.users ?? []).map((u) => ({
     id: u.id,
@@ -85,7 +90,7 @@ export default async function ParametresPage({
 
       <SettingsShell
         settings={settings}
-        connection={connection}
+        connections={connections}
         gmailParam={gmail}
         autoAckEnabled={autoAckEnabled}
         lastSyncAt={lastSyncAt}

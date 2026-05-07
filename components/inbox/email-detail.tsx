@@ -36,6 +36,7 @@ type Client = { id: string; name: string; email: string | null }
 
 type Props = {
   messageId: string
+  connectionId: string
   email: { id: string; threadId: string; subject: string; from: string }
   statusRecord: EmailStatusRecord | null
   clients: Client[]
@@ -112,6 +113,7 @@ function stripHtml(html: string): string {
 
 export function EmailDetail({
   messageId,
+  connectionId,
   email: emailSummary,
   statusRecord,
   clients,
@@ -152,12 +154,12 @@ export function EmailDetail({
     form.reset()
     setIsLoading(true)
 
-    fetch(`/api/gmail/messages/${messageId}`)
+    fetch(`/api/gmail/messages/${messageId}?connectionId=${connectionId}`)
       .then((r) => r.json())
       .then((data: { email: EmailDetailType }) => setDetail(data.email))
       .catch(() => toast.error("Impossible de charger l'email"))
       .finally(() => setIsLoading(false))
-  }, [messageId, form])
+  }, [messageId, connectionId, form])
 
   // Detect relevant attachments (PDF / images) once the email detail is loaded.
   useEffect(() => {
@@ -240,6 +242,7 @@ export function EmailDetail({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          connectionId,
           to: detail.from,
           subject,
           body: values.body,

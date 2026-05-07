@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser, getUserRole } from "@/lib/supabase/server"
-import { getAttachmentData } from "@/lib/gmail"
+import { requireWorkspace } from "@/lib/workspaces"
+import { GmailClient } from "@/lib/gmail"
 import { extractPurchaseOrder, isSupportedMimeType } from "@/lib/agents/purchase-order"
 
 export const maxDuration = 30
 
 const extractSchema = z.object({
+  connectionId: z.string().uuid(),
   messageId: z.string().min(1),
   attachmentId: z.string().min(1),
   mimeType: z.string().min(1),
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { messageId, attachmentId, mimeType } = parsed.data
+  const { connectionId, messageId, attachmentId, mimeType } = parsed.data
 
   if (!isSupportedMimeType(mimeType)) {
     return NextResponse.json(
@@ -46,7 +48,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const attachmentBuffer = await getAttachmentData(messageId, attachmentId)
+    const { workspaceId } = await requireWorkspace(user.id)
+    const client = await GmailClient.forConnection(connectionId, workspaceId)
+    const attachmentBuffer = await client.getAttachmentData(messageId, attachmentId)
     const extraction = await extractPurchaseOrder(attachmentBuffer, mimeType, req.signal)
     return NextResponse.json(extraction)
   } catch (err) {

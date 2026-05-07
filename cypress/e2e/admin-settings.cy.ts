@@ -57,7 +57,7 @@ describe("Page /parametres — navigation par onglets", () => {
 
   it("navigue vers l'onglet Intégrations", () => {
     cy.get("[data-testid='tab-integrations']").click()
-    cy.contains("Boîte mail").should("be.visible")
+    cy.contains("Boîtes mail").should("be.visible")
   })
 
   it("navigue vers l'onglet Équipe", () => {

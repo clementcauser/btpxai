@@ -27,9 +27,15 @@ type AdminUser = {
   created_at: string
 }
 
+type GmailConnectionSummary = {
+  id: string
+  email: string
+  label: string
+}
+
 type Props = {
   settings: Record<string, string>
-  connection: { email: string; created_at: string } | null
+  connections: GmailConnectionSummary[]
   gmailParam?: string
   autoAckEnabled: boolean
   lastSyncAt: string | null
@@ -38,7 +44,7 @@ type Props = {
 
 export function SettingsShell({
   settings,
-  connection,
+  connections,
   gmailParam,
   autoAckEnabled,
   lastSyncAt,
@@ -100,7 +106,7 @@ export function SettingsShell({
         )}
 
         {activeTab === "integrations" && (
-          <GmailConnectionSection connection={connection} gmailParam={gmailParam} />
+          <GmailConnectionSection connections={connections} gmailParam={gmailParam} />
         )}
 
         {activeTab === "equipe" && (
