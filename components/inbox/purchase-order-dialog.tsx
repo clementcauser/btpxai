@@ -474,7 +474,7 @@ export function PurchaseOrderDialog({ open, onOpenChange, messageId, attachment,
         {/* Done */}
         {step === "done" && result && (
           <div className="flex flex-col items-center gap-4 py-8">
-            <div className="size-12 rounded-full bg-emerald-400/10 border border-emerald-400/30 flex items-center justify-center">
+            <div className="size-12 rounded-sm bg-emerald-400/10 border border-emerald-400/30 flex items-center justify-center">
               <CheckCircle2 className="size-6 text-emerald-400" />
             </div>
             <div className="text-center space-y-1">

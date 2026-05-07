@@ -217,7 +217,7 @@ export function QuoteRequestForm({ clients: initialClients }: QuoteRequestFormPr
                     id="client_id"
                     data-slot="select"
                     aria-invalid={!!errors.client_id}
-                    className="h-8 w-full appearance-none rounded-lg border border-input bg-card px-2.5 pr-8 text-sm text-foreground transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 cursor-pointer"
+                    className="h-8 w-full appearance-none rounded-sm border border-input bg-card px-2.5 pr-8 text-sm text-foreground transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 cursor-pointer"
                     {...register("client_id")}
                   >
                     <option value="">— Sélectionner un client —</option>
@@ -419,7 +419,7 @@ function GeneratingState() {
         {/* Forge icon with pulse animation */}
         <div className="relative flex items-center justify-center">
           <div
-            className="size-20 rounded-full border-2 border-primary/40"
+            className="size-20 rounded-sm border-2 border-primary/40"
             style={{ animation: "forgePulse 1.8s ease-in-out infinite" }}
           />
           <div className="absolute inset-0 flex items-center justify-center">

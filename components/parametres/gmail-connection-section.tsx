@@ -41,7 +41,7 @@ export function GmailConnectionSection({ connections, gmailParam }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-border p-6 space-y-4">
+    <div className="rounded-sm border border-border p-6 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Mail className="size-5 text-muted-foreground" />
@@ -59,14 +59,14 @@ export function GmailConnectionSection({ connections, gmailParam }: Props) {
       </div>
 
       {gmailParam === "connected" && (
-        <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 rounded-md px-3 py-2">
+        <div className="flex items-center gap-2 text-sm text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-sm px-3 py-2">
           <CheckCircle className="size-4" />
           Boîte mail connectée avec succès.
         </div>
       )}
 
       {gmailParam === "error" && (
-        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">
+        <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-sm px-3 py-2">
           <XCircle className="size-4" />
           Erreur lors de la connexion. Veuillez réessayer.
         </div>
@@ -79,7 +79,7 @@ export function GmailConnectionSection({ connections, gmailParam }: Props) {
           {connections.map((conn, idx) => (
             <div
               key={conn.id}
-              className="flex items-center justify-between gap-3 rounded-md border border-border px-4 py-3"
+              className="flex items-center justify-between gap-3 rounded-sm border border-border px-4 py-3"
             >
               <div className="flex items-center gap-3">
                 <span
