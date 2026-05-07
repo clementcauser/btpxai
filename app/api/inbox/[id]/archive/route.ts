@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser, getUserRole } from "@/lib/supabase/server"
 import { requireWorkspace } from "@/lib/workspaces"
-import { archiveEmail } from "@/lib/gmail"
+import { GmailClient } from "@/lib/gmail"
 import { upsertEmailStatus } from "@/lib/email-statuses"
 
 const archiveSchema = z.object({
   threadId: z.string().min(1),
+  connectionId: z.string().uuid(),
 })
 
 export async function POST(
@@ -37,8 +38,9 @@ export async function POST(
 
   try {
     const { workspaceId } = await requireWorkspace(user.id)
+    const client = await GmailClient.forConnection(parsed.data.connectionId, workspaceId)
     await Promise.all([
-      archiveEmail(id),
+      client.archiveEmail(id),
       upsertEmailStatus(workspaceId, id, parsed.data.threadId, "archive"),
     ])
     return NextResponse.json({ success: true })

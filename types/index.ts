@@ -116,11 +116,20 @@ export type EmailSummaryWithStatus = EmailSummary & {
 export type GmailConnection = {
   id: string
   email: string
+  label: string
   access_token: string
   refresh_token: string
   expires_at: string
+  workspace_id: string
   created_at: string
   updated_at: string
+}
+
+export type EmailSummaryWithSource = EmailSummary & {
+  connectionId: string
+  connectionEmail: string
+  connectionLabel: string
+  connectionColor: string
 }
 
 export type EmailSummary = {
