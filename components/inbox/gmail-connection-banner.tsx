@@ -4,9 +4,9 @@ import { buttonVariants } from "@/components/ui/button"
 
 export function GmailConnectionBanner() {
   return (
-    <div className="rounded-lg border border-dashed border-border bg-muted/30 p-8 text-center space-y-4">
+    <div className="rounded-sm border border-dashed border-border bg-muted/30 p-8 text-center space-y-4">
       <div className="flex justify-center">
-        <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center">
+        <div className="size-12 rounded-sm bg-primary/10 flex items-center justify-center">
           <Mail className="size-6 text-primary" />
         </div>
       </div>

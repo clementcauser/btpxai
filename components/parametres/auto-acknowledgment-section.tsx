@@ -24,7 +24,7 @@ export function AutoAcknowledgmentSection({ initialEnabled }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-border p-6 space-y-4">
+    <div className="rounded-sm border border-border p-6 space-y-4">
       <div className="flex items-center gap-3">
         <MailCheck className="size-5 text-muted-foreground" />
         <div>

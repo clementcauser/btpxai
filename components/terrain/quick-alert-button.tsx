@@ -193,7 +193,7 @@ export default function QuickAlertButton() {
                   style={{ animation: "fadeSlideIn 0.3s ease both" }}
                 >
                   <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center mb-5"
+                    className="w-20 h-20 rounded-sm flex items-center justify-center mb-5"
                     style={{ background: "oklch(0.22 0.14 25 / 0.4)" }}
                   >
                     <AlertTriangle

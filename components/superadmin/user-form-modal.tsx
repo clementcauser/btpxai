@@ -159,7 +159,7 @@ export function UserFormModal({ open, onOpenChange, user }: Props) {
               <div className="relative">
                 <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/60 pointer-events-none" />
                 <select id="role"
-                  className="w-full pl-9 h-10 rounded-md border bg-secondary text-sm text-foreground border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full pl-9 h-10 rounded-sm border bg-secondary text-sm text-foreground border-border focus:outline-none focus:ring-2 focus:ring-primary/50"
                   {...register("role")}>
                   {ROLES.map((r) => (
                     <option key={r.value} value={r.value}>{r.label}</option>

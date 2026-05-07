@@ -113,7 +113,7 @@ export function WorkspacesTable({ workspaces }: Props) {
                     </div>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
-                    <code className="text-xs text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">{workspace.slug}</code>
+                    <code className="text-xs text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-sm">{workspace.slug}</code>
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     <span className="text-xs text-muted-foreground">
