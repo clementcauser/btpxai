@@ -110,7 +110,7 @@ materiaux_requests -- id, project_id, user_id, label, quantity, urgency, status,
 - Policies par rôle : `admin`, `bureau`, `ouvrier`
 - Toujours utiliser le client server-side dans les Server Components et API routes
 - Toujours utiliser le client client-side dans les Client Components
-- Les types doivent être régénérés après chaque modification du schéma : `supabase gen types typescript --local > types/supabase.ts`
+- Les types doivent être régénérés après chaque modification du schéma : `npm run db:types` (utilise le projet Supabase lié en production)
 
 ---
 
@@ -192,7 +192,9 @@ L'interface terrain est une priorité UX critique. Les ouvriers l'utilisent sur 
 
 - Sync quotidienne via Vercel Cron
 - Source de vérité : l'application (pas le Sheet)
-- Fonctions dans `lib/sheets.ts`
+- L'URL du Google Sheet est configurée **par workspace** dans les paramètres (clé `sheets_spreadsheet_url` dans `workspace_settings`)
+- Les rôles `bureau` et `admin` peuvent accéder au lien depuis le dashboard
+- Fonctions dans `lib/sheets.ts` : `syncAllToSheets`, `getSpreadsheetUrl`, `extractSpreadsheetId`, `getLastSyncAt`
 
 ### Resend (emails transactionnels)
 

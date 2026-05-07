@@ -9,6 +9,7 @@
  * 5. Reminders toggle changes state
  * 6. CGV text can be saved
  * 7. User invite form validates and submits
+ * 8. Google Sheets URL can be configured and the link appears
  */
 
 const DESKTOP = { width: 1280, height: 800 } as const
@@ -147,6 +148,55 @@ describe("Page /parametres — relances automatiques", () => {
   it("affiche les champs de délai", () => {
     cy.get("[data-testid='reminders-delay-j7']").should("be.visible")
     cy.get("[data-testid='reminders-delay-j14']").should("be.visible")
+  })
+})
+
+describe("Page /parametres — configuration Google Sheets", () => {
+  const VALID_SHEETS_URL =
+    "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
+
+  beforeEach(() => {
+    cy.viewport(DESKTOP.width, DESKTOP.height)
+    cy.loginAsAdmin()
+    cy.visit("/parametres")
+    cy.get("[data-testid='tab-automatisations']").click()
+
+    cy.intercept("PATCH", "/api/parametres/settings", { statusCode: 200, body: { ok: true } }).as(
+      "saveSetting"
+    )
+  })
+
+  it("affiche le champ de saisie de l'URL Google Sheets", () => {
+    cy.get("[data-testid='sheets-url-input']").should("be.visible")
+    cy.get("[data-testid='sheets-url-save-btn']").should("be.visible")
+  })
+
+  it("sauvegarde une URL valide et appelle l'API", () => {
+    cy.get("[data-testid='sheets-url-input']").clear().type(VALID_SHEETS_URL)
+    cy.get("[data-testid='sheets-url-save-btn']").click()
+    cy.wait("@saveSetting").its("request.body").should("deep.equal", {
+      key: "sheets_spreadsheet_url",
+      value: VALID_SHEETS_URL,
+    })
+  })
+
+  it("affiche une erreur pour une URL invalide", () => {
+    cy.get("[data-testid='sheets-url-input']").clear().type("https://example.com/not-a-sheet")
+    cy.get("[data-testid='sheets-url-save-btn']").click()
+    cy.contains("URL Google Sheets invalide").should("be.visible")
+    cy.get("@saveSetting.all").should("have.length", 0)
+  })
+
+  it("affiche le lien 'Ouvrir le Google Sheet' quand une URL est configurée", () => {
+    // Type and save a valid URL to update the client-side state
+    cy.get("[data-testid='sheets-url-input']").clear().type(VALID_SHEETS_URL)
+    cy.get("[data-testid='sheets-url-save-btn']").click()
+    cy.wait("@saveSetting")
+
+    cy.get("[data-testid='sheets-open-link']")
+      .should("be.visible")
+      .should("have.attr", "href", VALID_SHEETS_URL)
+      .should("have.attr", "target", "_blank")
   })
 })
 
