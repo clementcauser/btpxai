@@ -9,6 +9,7 @@ const createSchema = z.object({
   password: z.string().min(8, "Mot de passe trop court (8 caractères minimum)"),
   name: z.string().min(2, "Nom requis").optional(),
   role: z.enum(["admin", "bureau", "ouvrier", "super_admin"]),
+  workspace_id: z.string().uuid("workspace_id invalide").optional(),
 })
 
 async function requireSuperAdmin() {
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  const { email, password, name, role } = parsed.data
+  const { email, password, name, role, workspace_id } = parsed.data
 
   const { data, error } = await supabaseService.auth.admin.createUser({
     email,
@@ -69,6 +70,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Cet email est déjà utilisé" }, { status: 409 })
     }
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (workspace_id && role !== "super_admin") {
+    const { error: memberError } = await supabaseService
+      .from("workspace_members")
+      .insert({ workspace_id, user_id: data.user.id, role })
+
+    if (memberError) {
+      console.error("[superadmin/users] workspace_members insert failed:", memberError)
+    }
   }
 
   const user = {

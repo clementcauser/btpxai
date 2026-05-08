@@ -9,12 +9,17 @@ export const metadata: Metadata = {
 }
 
 export default async function SuperAdminWorkspacesPage() {
-  const { data, error } = await supabaseService
-    .from("workspaces")
-    .select("*")
-    .order("created_at", { ascending: false })
+  const [{ data, error }, { data: members }] = await Promise.all([
+    supabaseService.from("workspaces").select("*").order("created_at", { ascending: false }),
+    supabaseService.from("workspace_members").select("workspace_id"),
+  ])
 
   const workspaces: WorkspaceRow[] = error ? [] : (data ?? [])
+
+  const userCountByWorkspace: Record<string, number> = {}
+  for (const m of members ?? []) {
+    userCountByWorkspace[m.workspace_id] = (userCountByWorkspace[m.workspace_id] ?? 0) + 1
+  }
 
   return (
     <div className="space-y-6">
@@ -30,7 +35,7 @@ export default async function SuperAdminWorkspacesPage() {
           {workspaces.length} espace{workspaces.length !== 1 ? "s" : ""} · tous les espaces du système
         </p>
       </div>
-      <WorkspacesTable workspaces={workspaces} />
+      <WorkspacesTable workspaces={workspaces} userCountByWorkspace={userCountByWorkspace} />
     </div>
   )
 }

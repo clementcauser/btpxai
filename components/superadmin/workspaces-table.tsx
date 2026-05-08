@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Search, X, Plus, ChevronLeft, ChevronRight, Pencil, Trash2, Building2 } from "lucide-react"
+import { Search, X, Plus, ChevronLeft, ChevronRight, Pencil, Trash2, Building2, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,9 +11,9 @@ import { useRouter } from "next/navigation"
 
 const PER_PAGE = 20
 
-type Props = { workspaces: WorkspaceRow[] }
+type Props = { workspaces: WorkspaceRow[]; userCountByWorkspace: Record<string, number> }
 
-export function WorkspacesTable({ workspaces }: Props) {
+export function WorkspacesTable({ workspaces, userCountByWorkspace }: Props) {
   const router = useRouter()
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
@@ -91,6 +91,7 @@ export function WorkspacesTable({ workspaces }: Props) {
               <tr className="border-b border-border bg-secondary/40">
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground tracking-wider uppercase">Nom</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground tracking-wider uppercase hidden md:table-cell">Slug</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground tracking-wider uppercase hidden md:table-cell">Utilisateurs</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground tracking-wider uppercase hidden lg:table-cell">Créé le</th>
                 <th className="w-24" />
               </tr>
@@ -114,6 +115,14 @@ export function WorkspacesTable({ workspaces }: Props) {
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     <code className="text-xs text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-sm">{workspace.slug}</code>
+                  </td>
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="size-3 text-muted-foreground/60" />
+                      <span className="text-xs text-muted-foreground">
+                        {userCountByWorkspace[workspace.id] ?? 0}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     <span className="text-xs text-muted-foreground">
