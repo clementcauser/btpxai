@@ -5,9 +5,9 @@ const BUREAU_PATHS = ["/dashboard", "/devis", "/clients", "/inbox", "/parametres
 const TERRAIN_PATHS = ["/terrain"]
 const SUPERADMIN_PATHS = ["/superadmin"]
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.error('[middleware] Missing Supabase env vars — skipping auth')
+    console.error('[proxy] Missing Supabase env vars — skipping auth')
     return NextResponse.next()
   }
 
@@ -41,7 +41,7 @@ export async function middleware(request: NextRequest) {
     const { data } = await supabase.auth.getUser()
     supabaseUser = data.user
   } catch {
-    console.error('[middleware] supabase.auth.getUser() threw — failing closed')
+    console.error('[proxy] supabase.auth.getUser() threw — failing closed')
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
