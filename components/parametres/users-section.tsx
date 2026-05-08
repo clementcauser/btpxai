@@ -53,6 +53,7 @@ const ROLE_CONFIG: Record<UserRole, { label: string; icon: React.ElementType; cl
 function RoleBadge({ role }: { role: UserRole | null }) {
   if (!role) return <span className="text-xs text-muted-foreground italic">—</span>
   const cfg = ROLE_CONFIG[role]
+  if (!cfg) return <span className="text-xs text-muted-foreground italic">{role}</span>
   const Icon = cfg.icon
   return (
     <span
