@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Search, X, Plus, ChevronLeft, ChevronRight, Pencil, Trash2, Users } from "lucide-react"
+import { Search, X, Plus, ChevronLeft, ChevronRight, Pencil, Trash2, Users, Building2, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,18 +31,33 @@ type Props = { users: UserRow[] }
 export function UsersTable({ users }: Props) {
   const router = useRouter()
   const [search, setSearch] = useState("")
+  const [workspaceFilter, setWorkspaceFilter] = useState<string>("all")
   const [page, setPage] = useState(1)
   const [createOpen, setCreateOpen] = useState(false)
   const [editUser, setEditUser] = useState<UserRow | null>(null)
   const [deleteUser, setDeleteUser] = useState<UserRow | null>(null)
 
+  const workspaces = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const u of users) {
+      if (u.workspace_id && u.workspace_name) {
+        map.set(u.workspace_id, u.workspace_name)
+      }
+    }
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name))
+  }, [users])
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return users
-    return users.filter(
-      (u) => u.email.toLowerCase().includes(q) || u.name?.toLowerCase().includes(q) || u.role?.toLowerCase().includes(q)
-    )
-  }, [users, search])
+    return users.filter((u) => {
+      const matchSearch = !q || u.email.toLowerCase().includes(q) || u.name?.toLowerCase().includes(q) || u.role?.toLowerCase().includes(q)
+      const matchWorkspace =
+        workspaceFilter === "all" ||
+        (workspaceFilter === "__none__" && !u.workspace_id) ||
+        u.workspace_id === workspaceFilter
+      return matchSearch && matchWorkspace
+    })
+  }, [users, search, workspaceFilter])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
   const safePage = Math.min(page, totalPages)
@@ -59,8 +74,8 @@ export function UsersTable({ users }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/60 pointer-events-none" />
           <Input
             value={search}
@@ -77,9 +92,38 @@ export function UsersTable({ users }: Props) {
             </button>
           )}
         </div>
+
+        <div className="relative">
+          <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/60 pointer-events-none" />
+          <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground/40 pointer-events-none" />
+          <select
+            value={workspaceFilter}
+            onChange={(e) => { setWorkspaceFilter(e.target.value); setPage(1) }}
+            className={cn(
+              "h-9 pl-9 pr-7 rounded-sm border text-sm bg-secondary text-foreground border-border appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50",
+              workspaceFilter !== "all" && "border-primary/50 text-primary"
+            )}
+          >
+            <option value="all">Tous les workspaces</option>
+            <option value="__none__">Sans workspace</option>
+            {workspaces.map((w) => (
+              <option key={w.id} value={w.id}>{w.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {workspaceFilter !== "all" && (
+          <button
+            onClick={() => { setWorkspaceFilter("all"); setPage(1) }}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="size-3" /> Réinitialiser
+          </button>
+        )}
+
         <Button
           onClick={() => setCreateOpen(true)}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 font-heading tracking-wider uppercase h-9"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 font-heading tracking-wider uppercase h-9 ml-auto"
           data-testid="create-user-btn"
         >
           <Plus className="size-4" /> Nouveau
@@ -89,6 +133,8 @@ export function UsersTable({ users }: Props) {
       <p className="text-xs text-muted-foreground">
         {filtered.length} utilisateur{filtered.length !== 1 ? "s" : ""}
         {search && ` · filtrés sur "${search}"`}
+        {workspaceFilter !== "all" && workspaceFilter !== "__none__" && ` · workspace : ${workspaces.find(w => w.id === workspaceFilter)?.name}`}
+        {workspaceFilter === "__none__" && " · sans workspace"}
       </p>
 
       {filtered.length === 0 ? (
@@ -104,7 +150,8 @@ export function UsersTable({ users }: Props) {
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground tracking-wider uppercase">Email</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground tracking-wider uppercase hidden md:table-cell">Nom</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground tracking-wider uppercase hidden lg:table-cell">Rôle</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground tracking-wider uppercase hidden xl:table-cell">Créé le</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground tracking-wider uppercase hidden xl:table-cell">Workspace</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground tracking-wider uppercase hidden 2xl:table-cell">Créé le</th>
                 <th className="w-24" />
               </tr>
             </thead>
@@ -131,6 +178,16 @@ export function UsersTable({ users }: Props) {
                     ) : <span className="text-muted-foreground/30 text-xs">—</span>}
                   </td>
                   <td className="px-4 py-3 hidden xl:table-cell">
+                    {user.workspace_name ? (
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="size-3 text-muted-foreground/50 shrink-0" />
+                        <span className="text-xs text-muted-foreground truncate max-w-[140px]">{user.workspace_name}</span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground/30 text-xs">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 hidden 2xl:table-cell">
                     <span className="text-xs text-muted-foreground">
                       {new Date(user.created_at).toLocaleDateString("fr-FR")}
                     </span>

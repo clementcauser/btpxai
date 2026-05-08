@@ -9,12 +9,17 @@ export function MobileHeader({
   email,
   role,
   alertBadge = 0,
+  workspaceName,
+  logoUrl,
 }: {
   email: string
   role: "admin" | "bureau" | "ouvrier"
   alertBadge?: number
+  workspaceName?: string | null
+  logoUrl?: string | null
 }) {
   const [open, setOpen] = useState(false)
+  const displayName = workspaceName ?? "BTPxAI"
 
   return (
     <>
@@ -27,8 +32,8 @@ export function MobileHeader({
         >
           <Menu className="size-4" />
         </Button>
-        <span className="font-heading font-700 text-sm tracking-widest uppercase">
-          BTP<span className="text-primary">×</span>AI
+        <span className="font-heading font-700 text-sm tracking-wide truncate">
+          {displayName}
         </span>
       </header>
 
@@ -55,7 +60,13 @@ export function MobileHeader({
           >
             <X className="size-4" />
           </Button>
-          <AppSidebar email={email} role={role} alertBadge={alertBadge} />
+          <AppSidebar
+            email={email}
+            role={role}
+            alertBadge={alertBadge}
+            workspaceName={workspaceName}
+            logoUrl={logoUrl}
+          />
         </div>
       </div>
     </>

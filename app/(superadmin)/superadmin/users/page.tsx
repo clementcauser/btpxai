@@ -10,7 +10,20 @@ export const metadata: Metadata = {
 }
 
 export default async function SuperAdminUsersPage() {
-  const { data, error } = await supabaseService.auth.admin.listUsers({ perPage: 1000 })
+  const [{ data, error }, { data: memberships }] = await Promise.all([
+    supabaseService.auth.admin.listUsers({ perPage: 1000 }),
+    supabaseService
+      .from("workspace_members")
+      .select("user_id, workspace_id, workspaces(id, name)"),
+  ])
+
+  const membershipMap = new Map<string, { workspace_id: string; workspace_name: string }>()
+  for (const m of memberships ?? []) {
+    const ws = Array.isArray(m.workspaces) ? m.workspaces[0] : m.workspaces
+    if (ws && !membershipMap.has(m.user_id)) {
+      membershipMap.set(m.user_id, { workspace_id: m.workspace_id, workspace_name: ws.name })
+    }
+  }
 
   const users: UserRow[] = error
     ? []
@@ -20,6 +33,8 @@ export default async function SuperAdminUsersPage() {
         name: (u.user_metadata?.name as string | undefined) ?? null,
         role: (u.user_metadata?.role as string | undefined) ?? null,
         created_at: u.created_at,
+        workspace_id: membershipMap.get(u.id)?.workspace_id ?? null,
+        workspace_name: membershipMap.get(u.id)?.workspace_name ?? null,
       }))
 
   return (

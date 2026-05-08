@@ -43,6 +43,8 @@ export type UserRow = {
   name: string | null
   role: string | null
   created_at: string
+  workspace_id: string | null
+  workspace_name: string | null
 }
 
 type Props = {
