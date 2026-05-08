@@ -20,19 +20,22 @@ export async function GET(req: NextRequest) {
   const stateParam = req.nextUrl.searchParams.get("state")
 
   if (error || !code || !stateParam) {
-    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error`)
+    console.error('[gmail/callback] Missing params — error:', error, 'code:', !!code, 'state:', !!stateParam)
+    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error&reason=params`)
   }
 
   let state: OAuthState
   try {
     state = JSON.parse(Buffer.from(stateParam, "base64url").toString("utf-8")) as OAuthState
-  } catch {
-    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error`)
+  } catch (e) {
+    console.error('[gmail/callback] State decoding failed:', e)
+    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error&reason=state`)
   }
 
   const expectedNonce = req.cookies.get("gmail_oauth_nonce")?.value
   if (!state.nonce || !expectedNonce || state.nonce !== expectedNonce) {
-    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error`)
+    console.error('[gmail/callback] Nonce mismatch — expected:', expectedNonce, 'got:', state.nonce)
+    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error&reason=nonce`)
   }
 
   const redirectUri = `${env.NEXT_PUBLIC_APP_URL}/api/gmail/callback`
@@ -50,7 +53,9 @@ export async function GET(req: NextRequest) {
   })
 
   if (!tokenRes.ok) {
-    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error`)
+    const body = await tokenRes.text()
+    console.error('[gmail/callback] Token exchange failed:', tokenRes.status, body)
+    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error&reason=token_exchange`)
   }
 
   const tokens = (await tokenRes.json()) as {
@@ -60,7 +65,8 @@ export async function GET(req: NextRequest) {
   }
 
   if (!tokens.refresh_token) {
-    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error`)
+    console.error('[gmail/callback] No refresh_token in response (user may have already granted access)')
+    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error&reason=no_refresh_token`)
   }
 
   const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -68,7 +74,8 @@ export async function GET(req: NextRequest) {
   })
 
   if (!userInfoRes.ok) {
-    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error`)
+    console.error('[gmail/callback] Userinfo fetch failed:', userInfoRes.status)
+    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error&reason=userinfo`)
   }
 
   const userInfo = (await userInfoRes.json()) as { email: string }
@@ -76,7 +83,7 @@ export async function GET(req: NextRequest) {
   const now = new Date().toISOString()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabaseService.from("gmail_connections") as any).insert({
+  const { error: insertError } = await (supabaseService.from("gmail_connections") as any).insert({
     email: userInfo.email,
     label: state.label,
     access_token: tokens.access_token,
@@ -86,6 +93,11 @@ export async function GET(req: NextRequest) {
     created_at: now,
     updated_at: now,
   })
+
+  if (insertError) {
+    console.error('[gmail/callback] Insert failed:', insertError)
+    return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=error&reason=db_insert`)
+  }
 
   const finalResponse = NextResponse.redirect(
     `${env.NEXT_PUBLIC_APP_URL}/parametres?gmail=connected`

@@ -4,6 +4,8 @@ import { requireWorkspace, WorkspaceError } from "@/lib/workspaces"
 import { env } from "@/lib/env"
 
 const SCOPES = [
+  "openid",
+  "email",
   "https://www.googleapis.com/auth/gmail.readonly",
   "https://www.googleapis.com/auth/gmail.send",
   "https://www.googleapis.com/auth/gmail.modify",
