@@ -1,11 +1,11 @@
-import type { Metadata } from "next"
-import Link from "next/link"
-import { getUser, getUserRole } from "@/lib/supabase/server"
-import { supabaseService } from "@/lib/supabase/service"
-import { getDashboardMetrics } from "@/lib/dashboard"
-import { getAppSetting } from "@/lib/settings"
-import { requireWorkspace } from "@/lib/workspaces"
-import { DashboardAutoRefresh } from "@/components/dashboard/auto-refresh"
+import type { Metadata } from "next";
+import Link from "next/link";
+import { getUser, getUserRole } from "@/lib/supabase/server";
+import { supabaseService } from "@/lib/supabase/service";
+import { getDashboardMetrics } from "@/lib/dashboard";
+import { getAppSetting } from "@/lib/settings";
+import { requireWorkspace } from "@/lib/workspaces";
+import { DashboardAutoRefresh } from "@/components/dashboard/auto-refresh";
 import {
   FileText,
   Users,
@@ -17,19 +17,19 @@ import {
   Clock,
   ArrowRight,
   Sheet,
-} from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export const metadata: Metadata = {
   title: "Tableau de bord — BTP×AI",
-}
+};
 
 function formatRevenue(amount: number): string {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     maximumFractionDigits: 0,
-  }).format(amount)
+  }).format(amount);
 }
 
 const quickActions = [
@@ -54,12 +54,12 @@ const quickActions = [
     icon: Users,
     external: false,
   },
-]
+];
 
 export default async function DashboardPage() {
-  const user = await getUser()
-  const role = getUserRole(user) ?? "bureau"
-
+  const user = await getUser();
+  const role = getUserRole(user) ?? "bureau";
+  console.log(role);
   let metrics = {
     pendingQuotes: 0,
     activeProjects: 0,
@@ -67,51 +67,51 @@ export default async function DashboardPage() {
     weeklyRevenue: 0,
     pendingMaterials: 0,
     openAlerts: 0,
-  }
+  };
 
-  let sheetsUrl: string | null = null
+  let sheetsUrl: string | null = null;
 
   try {
-    metrics = await getDashboardMetrics(supabaseService)
+    metrics = await getDashboardMetrics(supabaseService);
   } catch {
     // Fail gracefully — show zeros
   }
 
   try {
     if (user) {
-      const { workspaceId } = await requireWorkspace(user.id)
-      sheetsUrl = await getAppSetting(workspaceId, "sheets_spreadsheet_url")
+      const { workspaceId } = await requireWorkspace(user.id);
+      sheetsUrl = await getAppSetting(workspaceId, "sheets_spreadsheet_url");
     }
   } catch {
     // Fail gracefully — no link shown
   }
 
   const greeting = (() => {
-    const hour = new Date().getHours()
-    if (hour < 12) return "Bonjour"
-    if (hour < 18) return "Bon après-midi"
-    return "Bonsoir"
-  })()
+    const hour = new Date().getHours();
+    if (hour < 12) return "Bonjour";
+    if (hour < 18) return "Bon après-midi";
+    return "Bonsoir";
+  })();
 
   const dateLabel = new Date().toLocaleDateString("fr-FR", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
-  })
+  });
 
   type MetricCard = {
-    label: string
-    value: string
-    description: string
-    icon: React.ElementType
-    href?: string
-    linkLabel?: string
-    accentColor: string
-    iconBg: string
-    iconColor: string
-    urgent: boolean
-  }
+    label: string;
+    value: string;
+    description: string;
+    icon: React.ElementType;
+    href?: string;
+    linkLabel?: string;
+    accentColor: string;
+    iconBg: string;
+    iconColor: string;
+    urgent: boolean;
+  };
 
   const metricCards: MetricCard[] = [
     {
@@ -196,7 +196,7 @@ export default async function DashboardPage() {
           : "oklch(0.58 0.008 258)",
       urgent: metrics.openAlerts > 0,
     },
-  ]
+  ];
 
   return (
     <div className="space-y-8">
@@ -255,8 +255,7 @@ export default async function DashboardPage() {
             }}
           >
             {metrics.openAlerts} alerte
-            {metrics.openAlerts > 1 ? "s" : ""} terrain en attente de
-            traitement
+            {metrics.openAlerts > 1 ? "s" : ""} terrain en attente de traitement
           </p>
           <span
             className="text-xs uppercase tracking-wider font-bold"
@@ -291,8 +290,7 @@ export default async function DashboardPage() {
                   animationDelay: `${i * 0.06}s`,
                   ...(card.urgent
                     ? {
-                        boxShadow:
-                          "0 0 0 1px oklch(0.5 0.2 25 / 0.25) inset",
+                        boxShadow: "0 0 0 1px oklch(0.5 0.2 25 / 0.25) inset",
                       }
                     : {}),
                 }}
@@ -320,8 +318,7 @@ export default async function DashboardPage() {
                 <p
                   className="font-heading font-700 leading-none tracking-tight"
                   style={{
-                    fontSize:
-                      card.value.length > 8 ? "1.6rem" : "2.25rem",
+                    fontSize: card.value.length > 8 ? "1.6rem" : "2.25rem",
                     color: card.urgent
                       ? card.iconColor
                       : "oklch(0.92 0.012 78)",
@@ -349,7 +346,7 @@ export default async function DashboardPage() {
                   </div>
                 )}
               </div>
-            )
+            );
 
             return card.href ? (
               <Link key={card.label} href={card.href} className="block">
@@ -357,7 +354,7 @@ export default async function DashboardPage() {
               </Link>
             ) : (
               <div key={card.label}>{cardContent}</div>
-            )
+            );
           })}
         </div>
       </section>
@@ -419,5 +416,5 @@ export default async function DashboardPage() {
         Données actualisées toutes les 5 minutes
       </p>
     </div>
-  )
+  );
 }

@@ -14,7 +14,8 @@
     "test:e2e:open": "cypress open",
     "test:ci": "vitest run && start-server-and-test 'node scripts/start-e2e-server.js' http://localhost:3000 'cypress run'",
     "db:types": "supabase gen types typescript --linked > types/supabase.ts",
-    "db:diff": "supabase db diff --linked"
+    "db:diff": "supabase db diff --linked",
+    "db:seed-superadmin": "npx tsx scripts/seed-superadmin.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.71",

@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Loader2, Mail, User, ShieldCheck, Lock } from "lucide-react"
+import { Loader2, Mail, User, ShieldCheck, Lock, Building2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,7 @@ const createSchema = z.object({
   name: z.string().min(2, "Nom requis (2 caractères minimum)"),
   role: z.enum(["admin", "bureau", "ouvrier", "super_admin"]),
   password: z.string().min(8, "Mot de passe requis (8 caractères minimum)"),
+  workspace_id: z.string().uuid().optional(),
 })
 
 const updateSchema = z.object({
@@ -33,6 +34,8 @@ const updateSchema = z.object({
   role: z.enum(["admin", "bureau", "ouvrier", "super_admin"]).optional(),
   password: z.string().min(8).or(z.literal("")).optional(),
 })
+
+type Workspace = { id: string; name: string }
 
 export type UserRow = {
   id: string
@@ -52,12 +55,14 @@ export function UserFormModal({ open, onOpenChange, user }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const isEditing = !!user
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([])
+  const [workspacesLoading, setWorkspacesLoading] = useState(false)
 
   type CreateValues = z.infer<typeof createSchema>
   type UpdateValues = z.infer<typeof updateSchema>
   type FormValues = CreateValues | UpdateValues
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(isEditing ? updateSchema : createSchema),
     defaultValues: {
       email: user?.email ?? "",
@@ -67,14 +72,29 @@ export function UserFormModal({ open, onOpenChange, user }: Props) {
     },
   })
 
+  const selectedRole = watch("role")
+  const needsWorkspace = !isEditing && selectedRole !== "super_admin"
+
   useEffect(() => {
-    if (open) reset({
-      email: user?.email ?? "",
-      name: user?.name ?? "",
-      role: (user?.role as "admin" | "bureau" | "ouvrier" | "super_admin" | undefined) ?? "bureau",
-      password: "",
-    })
-  }, [open, user, reset])
+    if (open) {
+      reset({
+        email: user?.email ?? "",
+        name: user?.name ?? "",
+        role: (user?.role as "admin" | "bureau" | "ouvrier" | "super_admin" | undefined) ?? "bureau",
+        password: "",
+        workspace_id: undefined,
+      })
+
+      if (!isEditing) {
+        setWorkspacesLoading(true)
+        fetch("/api/superadmin/workspaces")
+          .then((r) => r.json())
+          .then((json) => setWorkspaces(json.workspaces ?? []))
+          .catch(() => setWorkspaces([]))
+          .finally(() => setWorkspacesLoading(false))
+      }
+    }
+  }, [open, user, isEditing, reset])
 
   function onSubmit(values: FormValues) {
     startTransition(async () => {
@@ -83,7 +103,10 @@ export function UserFormModal({ open, onOpenChange, user }: Props) {
           ? Object.fromEntries(
               Object.entries(values).filter(([k, v]) => v !== "" && v !== undefined && (k !== "password" || v))
             )
-          : values
+          : {
+              ...values,
+              workspace_id: (values as z.infer<typeof createSchema>).workspace_id || undefined,
+            }
 
         const url = isEditing ? `/api/superadmin/users/${user!.id}` : "/api/superadmin/users"
         const method = isEditing ? "PUT" : "POST"
@@ -167,6 +190,28 @@ export function UserFormModal({ open, onOpenChange, user }: Props) {
                 </select>
               </div>
             </div>
+
+            {needsWorkspace && (
+              <div className="space-y-1.5">
+                <Label htmlFor="workspace_id" className="text-xs tracking-wider uppercase text-muted-foreground">
+                  Espace de travail
+                </Label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/60 pointer-events-none" />
+                  <select
+                    id="workspace_id"
+                    disabled={workspacesLoading}
+                    className="w-full pl-9 h-10 rounded-sm border bg-secondary text-sm text-foreground border-border focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+                    {...register("workspace_id")}
+                  >
+                    <option value="">— Aucun (optionnel) —</option>
+                    {workspaces.map((w) => (
+                      <option key={w.id} value={w.id}>{w.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label htmlFor="password" className="text-xs tracking-wider uppercase text-muted-foreground">
