@@ -5,6 +5,7 @@ import { generateWeeklyReportNarrative } from "@/lib/agents/weekly-report"
 import { buildWeeklyReportHtml, buildWeeklyReportSubject } from "@/lib/email/weekly-report"
 import { env } from "@/lib/env"
 import { supabaseService } from "@/lib/supabase/service"
+import { getCompanyInfo } from "@/lib/settings"
 
 function isCronAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET
@@ -21,6 +22,7 @@ type WorkspaceResult = {
 }
 
 async function processWorkspace(workspaceId: string): Promise<WorkspaceResult> {
+  const company = await getCompanyInfo(workspaceId)
   let data
   try {
     data = await getWeeklyReportData(workspaceId)
@@ -45,10 +47,10 @@ async function processWorkspace(workspaceId: string): Promise<WorkspaceResult> {
   try {
     const resend = new Resend(env.RESEND_API_KEY)
     await resend.emails.send({
-      from: "BTP × AI Métallerie <rapport@btpxai.fr>",
+      from: `${company.name || "Rapport"} <rapport@btpxai.fr>`,
       to: recipients,
       subject: buildWeeklyReportSubject(data.weekRange.start),
-      html: buildWeeklyReportHtml(data, narrative),
+      html: buildWeeklyReportHtml(data, narrative, company),
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
