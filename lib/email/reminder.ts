@@ -1,5 +1,6 @@
 import type { QuoteWithContext } from "@/types"
 import type { ReminderType } from "@/types"
+import type { CompanyInfo } from "@/lib/settings"
 
 function fmtEur(n: number) {
   return new Intl.NumberFormat("fr-FR", {
@@ -26,7 +27,8 @@ export function buildReminderSubject(
 
 export function buildReminderHtml(
   quote: QuoteWithContext,
-  type: ReminderType
+  type: ReminderType,
+  company: CompanyInfo,
 ): string {
   const ref = getRef(quote)
   const clientName = quote.project.client.name
@@ -59,8 +61,8 @@ export function buildReminderHtml(
         <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e4e4e7;">
           <tr>
             <td style="background:#18181b;padding:32px 40px;">
-              <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.02em;">BTP × AI Métallerie</p>
-              <p style="margin:4px 0 0;font-size:13px;color:#a1a1aa;">12 rue de la Forge, 75001 Paris · 01 23 45 67 89</p>
+              <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.02em;">${company.name}</p>
+              <p style="margin:4px 0 0;font-size:13px;color:#a1a1aa;">${company.address}${company.phone ? ` · ${company.phone}` : ""}</p>
             </td>
           </tr>
           <tr>
@@ -94,13 +96,13 @@ export function buildReminderHtml(
                 Pour toute question, n'hésitez pas à nous contacter en répondant à cet email.
               </p>
               <p style="margin:0;font-size:14px;color:#3f3f46;line-height:1.6;">Cordialement,</p>
-              <p style="margin:4px 0 0;font-size:14px;font-weight:600;color:#18181b;">L'équipe BTP × AI Métallerie</p>
+              <p style="margin:4px 0 0;font-size:14px;font-weight:600;color:#18181b;">L'équipe ${company.name}</p>
             </td>
           </tr>
           <tr>
             <td style="background:#fafafa;padding:20px 40px;border-top:1px solid #e4e4e7;">
               <p style="margin:0;font-size:12px;color:#a1a1aa;text-align:center;">
-                BTP × AI Métallerie · SIRET 123 456 789 00010 · contact@btpxai.fr
+                ${company.name}${company.siret ? ` · SIRET ${company.siret}` : ""}${company.email ? ` · ${company.email}` : ""}
               </p>
             </td>
           </tr>

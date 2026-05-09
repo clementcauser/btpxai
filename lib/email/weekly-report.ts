@@ -1,5 +1,6 @@
 import type { WeeklyReportData } from "@/lib/weekly-report"
 import type { WeeklyReportNarrative } from "@/lib/agents/weekly-report"
+import type { CompanyInfo } from "@/lib/settings"
 
 function fmtEur(n: number): string {
   return new Intl.NumberFormat("fr-FR", {
@@ -25,7 +26,8 @@ export function buildWeeklyReportSubject(weekStart: string): string {
 
 export function buildWeeklyReportHtml(
   data: WeeklyReportData,
-  narrative: WeeklyReportNarrative
+  narrative: WeeklyReportNarrative,
+  company: CompanyInfo,
 ): string {
   const weekEndDisplay = new Date(new Date(data.weekRange.end).getTime() - 1)
   const weekLabel = `${fmtDate(data.weekRange.start)} – ${fmtDate(weekEndDisplay.toISOString())}`
@@ -77,8 +79,8 @@ export function buildWeeklyReportHtml(
           <!-- Header -->
           <tr>
             <td style="background:#18181b;padding:32px 40px;">
-              <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.02em;">BTP × AI Métallerie</p>
-              <p style="margin:4px 0 0;font-size:13px;color:#a1a1aa;">12 rue de la Forge, 75001 Paris · 01 23 45 67 89</p>
+              <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.02em;">${company.name}</p>
+              <p style="margin:4px 0 0;font-size:13px;color:#a1a1aa;">${company.address}${company.phone ? ` · ${company.phone}` : ""}</p>
             </td>
           </tr>
 
@@ -148,7 +150,7 @@ export function buildWeeklyReportHtml(
           <tr>
             <td style="background:#fafafa;padding:20px 40px;border-top:1px solid #e4e4e7;margin-top:32px;">
               <p style="margin:0;font-size:12px;color:#a1a1aa;text-align:center;">
-                BTP × AI Métallerie · SIRET 123 456 789 00010 · contact@btpxai.fr
+                ${company.name}${company.siret ? ` · SIRET ${company.siret}` : ""}${company.email ? ` · ${company.email}` : ""}
               </p>
             </td>
           </tr>
