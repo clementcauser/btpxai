@@ -5,6 +5,8 @@ import { createClient, getUser } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
 import { getQuoteWithContext } from "@/lib/quotes"
 import { QuotePDFDocument } from "@/components/devis/quote-pdf-document"
+import { requireWorkspace } from "@/lib/workspaces"
+import { getCompanyInfo, getAppSetting } from "@/lib/settings"
 
 const BUCKET = "quotes-pdf"
 
@@ -29,6 +31,21 @@ export async function GET(
 
   const supabase = await createClient()
 
+  const { workspaceId } = await requireWorkspace(user.id)
+
+  const [company, conditionsRaw] = await Promise.all([
+    getCompanyInfo(workspaceId),
+    getAppSetting(workspaceId, "quote_conditions"),
+  ])
+  const conditions: string[] = (() => {
+    try {
+      const parsed: unknown = JSON.parse(conditionsRaw ?? "[]")
+      return Array.isArray(parsed) ? (parsed as string[]) : []
+    } catch {
+      return []
+    }
+  })()
+
   let quote
   try {
     quote = await getQuoteWithContext(supabase, id)
@@ -44,7 +61,7 @@ export async function GET(
   let buffer: Buffer
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const element = React.createElement(QuotePDFDocument, { quote }) as any
+    const element = React.createElement(QuotePDFDocument, { quote, company, conditions }) as any
     buffer = await renderToBuffer(element)
   } catch (err) {
     console.error("[pdf] render error", err)
