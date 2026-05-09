@@ -18,12 +18,15 @@ const SETTINGS_KEYS = [
   "company_address",
   "company_siret",
   "company_logo_url",
+  "company_phone",
+  "company_email",
+  "company_tva",
   "weekly_report_recipients",
   "weekly_report_enabled",
   "auto_reminders_enabled",
   "reminder_delay_j7",
   "reminder_delay_j14",
-  "default_cgv",
+  "quote_conditions",
   "sheets_spreadsheet_url",
 ]
 
