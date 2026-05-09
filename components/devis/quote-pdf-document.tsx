@@ -6,17 +6,9 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer"
 import type { QuoteWithContext } from "@/types"
+import type { CompanyInfo } from "@/lib/settings"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const COMPANY = {
-  name: "BTP × AI Métallerie",
-  address: "12 rue de la Forge, 75001 Paris",
-  phone: "01 23 45 67 89",
-  email: "contact@btpxai.fr",
-  siret: "123 456 789 00010",
-  tva_intracommunautaire: "FR12 123456789",
-}
 
 const PALETTE = {
   black: "#0a0a0a",
@@ -302,9 +294,11 @@ function validityDate(createdAt: string, days: number) {
 
 interface Props {
   quote: QuoteWithContext
+  company: CompanyInfo
+  conditions: string[]
 }
 
-export function QuotePDFDocument({ quote }: Props) {
+export function QuotePDFDocument({ quote, company, conditions }: Props) {
   const ref =
     quote.reference ?? `DEV-${quote.id.slice(0, 8).toUpperCase()}`
   const { client, title: projectTitle } = quote.project
@@ -321,20 +315,20 @@ export function QuotePDFDocument({ quote }: Props) {
   return (
     <Document
       title={`Devis ${ref}`}
-      author={COMPANY.name}
+      author={company.name}
       subject={`Devis pour ${client.name}`}
     >
       <Page size="A4" style={s.page}>
         {/* ── Header ─────────────────────────────────────────────────── */}
         <View style={s.header}>
           <View style={s.companyBlock}>
-            <Text style={s.companyName}>{COMPANY.name}</Text>
-            <Text style={s.companyDetail}>{COMPANY.address}</Text>
-            <Text style={s.companyDetail}>Tél : {COMPANY.phone}</Text>
-            <Text style={s.companyDetail}>{COMPANY.email}</Text>
-            <Text style={s.companyDetail}>SIRET : {COMPANY.siret}</Text>
+            <Text style={s.companyName}>{company.name}</Text>
+            <Text style={s.companyDetail}>{company.address}</Text>
+            <Text style={s.companyDetail}>Tél : {company.phone}</Text>
+            <Text style={s.companyDetail}>{company.email}</Text>
+            <Text style={s.companyDetail}>SIRET : {company.siret}</Text>
             <Text style={s.companyDetail}>
-              TVA : {COMPANY.tva_intracommunautaire}
+              TVA : {company.tva}
             </Text>
           </View>
           <View style={s.docBadge}>
@@ -448,20 +442,17 @@ export function QuotePDFDocument({ quote }: Props) {
         ) : null}
 
         {/* ── Conditions générales ────────────────────────────────────── */}
-        <View style={s.conditionsSection}>
-          <Text style={s.notesLabel}>Conditions générales</Text>
-          {[
-            "Acompte de 30 % à la commande, solde à réception de facture.",
-            "En cas de retard de paiement, des pénalités de 10 % par mois seront appliquées.",
-            "Tout litige sera soumis au Tribunal de Commerce de Paris.",
-            "Ce devis est valable pour la durée indiquée ci-dessus. Passé ce délai, les prix pourront être révisés.",
-          ].map((cond, i) => (
-            <View key={i} style={s.conditionsRow}>
-              <Text style={s.conditionsBullet}>—</Text>
-              <Text style={s.conditionsText}>{cond}</Text>
-            </View>
-          ))}
-        </View>
+        {conditions.length > 0 && (
+          <View style={s.conditionsSection}>
+            <Text style={s.notesLabel}>Conditions générales</Text>
+            {conditions.map((cond, i) => (
+              <View key={i} style={s.conditionsRow}>
+                <Text style={s.conditionsBullet}>—</Text>
+                <Text style={s.conditionsText}>{cond}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* ── Signature area ───────────────────────────────────────────── */}
         <View
@@ -473,7 +464,7 @@ export function QuotePDFDocument({ quote }: Props) {
         >
           {[
             ["Bon pour accord", "Client — date et signature"],
-            ["Signature entreprise", COMPANY.name],
+            ["Signature entreprise", company.name],
           ].map(([title, sub]) => (
             <View
               key={title}
@@ -499,7 +490,7 @@ export function QuotePDFDocument({ quote }: Props) {
         {/* ── Footer ──────────────────────────────────────────────────── */}
         <View style={s.footer} fixed>
           <Text style={s.footerText}>
-            {COMPANY.name} — SIRET {COMPANY.siret}
+            {company.name} — SIRET {company.siret}
           </Text>
           <Text style={s.footerAccent}>{ref}</Text>
           <Text style={s.footerText}>
