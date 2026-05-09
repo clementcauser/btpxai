@@ -3,6 +3,7 @@ import { z } from "zod"
 import { getUser, getUserRole } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
 import { getProjectSteps, createProjectStep } from "@/lib/project-steps"
+import { requireWorkspace, WorkspaceError } from "@/lib/workspaces"
 
 const getSchema = z.object({
   project_id: z.string().uuid("project_id doit être un UUID valide"),
@@ -62,14 +63,26 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  let workspaceId: string
+  try {
+    const ws = await requireWorkspace(user.id)
+    workspaceId = ws.workspaceId
+  } catch (err) {
+    if (err instanceof WorkspaceError)
+      return NextResponse.json({ error: err.message }, { status: 403 })
+    throw err
+  }
+
   try {
     const step = await createProjectStep(supabaseService, {
       project_id: parsed.data.project_id,
       label: parsed.data.label,
       order: parsed.data.order,
+      workspace_id: workspaceId,
     })
     return NextResponse.json({ step }, { status: 201 })
-  } catch {
+  } catch (err) {
+    console.error("createProjectStep error:", err)
     return NextResponse.json(
       { error: "Erreur lors de la création de l'étape" },
       { status: 500 }

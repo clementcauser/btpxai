@@ -42,6 +42,7 @@ export async function getOpenAlertesCount(supabase: AnyClient): Promise<number> 
 
 export async function createAlerte(
   supabase: AnyClient,
+  workspaceId: string,
   payload: {
     project_id: string | null
     user_id: string
@@ -59,6 +60,7 @@ export async function createAlerte(
       description: payload.description,
       photo_url: payload.photo_url ?? null,
       status: "ouvert",
+      workspace_id: workspaceId,
     })
     .select()
     .single()

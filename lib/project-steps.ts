@@ -20,7 +20,7 @@ export async function getProjectSteps(
 
 export async function createProjectStep(
   supabase: AnyClient,
-  payload: { project_id: string; label: string; order: number }
+  payload: { project_id: string; label: string; order: number; workspace_id: string }
 ): Promise<ProjectStep> {
   const { data, error } = await supabase
     .from("project_steps")
@@ -28,6 +28,7 @@ export async function createProjectStep(
       project_id: payload.project_id,
       label: payload.label,
       order: payload.order,
+      workspace_id: payload.workspace_id,
       completed_at: null,
       completed_by: null,
     })

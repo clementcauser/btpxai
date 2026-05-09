@@ -32,6 +32,7 @@ export async function getAllMateriauxRequests(
 
 export async function createMateriauxRequest(
   supabase: AnyClient,
+  workspaceId: string,
   payload: {
     project_id: string
     user_id: string
@@ -53,6 +54,7 @@ export async function createMateriauxRequest(
       comment: payload.comment ?? null,
       photo_url: payload.photo_url ?? null,
       status: "pending",
+      workspace_id: workspaceId,
     })
     .select()
     .single()

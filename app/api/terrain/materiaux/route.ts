@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
+import { requireWorkspace } from "@/lib/workspaces"
 import {
   getMateriauxRequests,
   createMateriauxRequest,
@@ -90,7 +91,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const request = await createMateriauxRequest(supabaseService, {
+    const { workspaceId } = await requireWorkspace(user.id)
+    const request = await createMateriauxRequest(supabaseService, workspaceId, {
       project_id: parsed.data.project_id,
       user_id: user.id,
       label: parsed.data.label,

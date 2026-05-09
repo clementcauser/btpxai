@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
+import { requireWorkspace } from "@/lib/workspaces"
 import { createAlerte, getAllAlertes } from "@/lib/terrain-alertes"
 
 const postSchema = z.object({
@@ -66,7 +67,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const alerte = await createAlerte(supabaseService, {
+    const { workspaceId } = await requireWorkspace(user.id)
+    const alerte = await createAlerte(supabaseService, workspaceId, {
       project_id: parsed.data.project_id ?? null,
       user_id: user.id,
       urgency: parsed.data.urgency,
