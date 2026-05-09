@@ -1,0 +1,59 @@
+import { NextRequest, NextResponse } from "next/server"
+import { z } from "zod"
+import { getUser, getUserRole } from "@/lib/supabase/server"
+import { requireWorkspace, WorkspaceError } from "@/lib/workspaces"
+import { ImapClient } from "@/lib/imap"
+
+const sendSchema = z.object({
+  connectionId: z.string().uuid(),
+  to: z.string().email(),
+  subject: z.string().min(1),
+  body: z.string().min(1),
+  replyToMessageId: z.string().optional(),
+})
+
+export async function POST(req: NextRequest) {
+  const user = await getUser()
+  if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 })
+
+  const role = getUserRole(user)
+  if (role !== "admin" && role !== "bureau") {
+    return NextResponse.json({ error: "Accès refusé" }, { status: 403 })
+  }
+
+  let workspaceId: string
+  try {
+    const ws = await requireWorkspace(user.id)
+    workspaceId = ws.workspaceId
+  } catch (err) {
+    if (err instanceof WorkspaceError)
+      return NextResponse.json({ error: "Workspace introuvable" }, { status: 400 })
+    throw err
+  }
+
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: "Corps invalide" }, { status: 400 })
+  }
+
+  const parsed = sendSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Données invalides" }, { status: 422 })
+  }
+
+  try {
+    const client = await ImapClient.forConnection(parsed.data.connectionId, workspaceId)
+    await client.sendEmail(
+      parsed.data.to,
+      parsed.data.subject,
+      parsed.data.body,
+      parsed.data.replyToMessageId
+    )
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error("Erreur sendEmail IMAP:", err)
+    return NextResponse.json({ error: "Erreur lors de l'envoi" }, { status: 500 })
+  }
+}

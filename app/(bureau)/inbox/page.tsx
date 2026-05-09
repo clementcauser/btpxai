@@ -5,6 +5,7 @@ import { getUser } from "@/lib/supabase/server"
 import { requireWorkspace } from "@/lib/workspaces"
 import { redirect } from "next/navigation"
 import { GmailClient } from "@/lib/gmail"
+import { ImapClient } from "@/lib/imap"
 import { CONNECTION_COLORS } from "@/lib/gmail-colors"
 import { getEmailStatuses } from "@/lib/email-statuses"
 import { GmailConnectionBanner } from "@/components/inbox/gmail-connection-banner"
@@ -26,29 +27,45 @@ export default async function InboxPage() {
     .eq("workspace_id", workspaceId)
     .order("name", { ascending: true })
 
-  const gmailClients = await GmailClient.allForWorkspace(workspaceId)
+  const [gmailClients, imapClients] = await Promise.all([
+    GmailClient.allForWorkspace(workspaceId).catch(() => []),
+    ImapClient.allForWorkspace(workspaceId).catch(() => []),
+  ])
 
-  const [emailResults, clientsResult] = await Promise.all([
-    Promise.all(
-      gmailClients.map((client) =>
-        client.listEmails({ maxResults: 50 }).catch(() => [])
-      )
-    ),
+  const [gmailResults, imapResults, clientsResult] = await Promise.all([
+    Promise.all(gmailClients.map((c) => c.listEmails({ maxResults: 50 }).catch(() => []))),
+    Promise.all(imapClients.map((c) => c.listEmails({ maxResults: 50 }).catch(() => []))),
     clients_promise,
   ])
 
-  const emails: EmailSummaryWithSource[] = emailResults
-    .flatMap((msgs, idx) => {
-      const client = gmailClients[idx]!
-      return msgs.map((email) => ({
-        ...email,
-        connectionId: client.connectionId,
-        connectionEmail: client.email,
-        connectionLabel: client.label,
-        connectionColor: CONNECTION_COLORS[idx % CONNECTION_COLORS.length],
-      }))
-    })
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const gmailEmails: EmailSummaryWithSource[] = gmailResults.flatMap((msgs, idx) => {
+    const client = gmailClients[idx]!
+    return msgs.map((email) => ({
+      ...email,
+      connectionId: client.connectionId,
+      connectionEmail: client.email,
+      connectionLabel: client.label,
+      connectionColor: CONNECTION_COLORS[idx % CONNECTION_COLORS.length]!,
+      connectionProvider: "gmail" as const,
+    }))
+  })
+
+  const imapEmails: EmailSummaryWithSource[] = imapResults.flatMap((msgs, idx) => {
+    const client = imapClients[idx]!
+    const colorIdx = (gmailClients.length + idx) % CONNECTION_COLORS.length
+    return msgs.map((email) => ({
+      ...email,
+      connectionId: client.connectionId,
+      connectionEmail: client.email,
+      connectionLabel: client.label,
+      connectionColor: CONNECTION_COLORS[colorIdx]!,
+      connectionProvider: "imap" as const,
+    }))
+  })
+
+  const emails: EmailSummaryWithSource[] = [...gmailEmails, ...imapEmails].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
 
   const initialStatuses: Record<string, EmailStatusRecord> =
     emails.length
@@ -61,12 +78,22 @@ export default async function InboxPage() {
     email: string | null
   }[]
 
-  const connections = gmailClients.map((c, idx) => ({
-    id: c.connectionId,
-    email: c.email,
-    label: c.label,
-    color: CONNECTION_COLORS[idx % CONNECTION_COLORS.length],
-  }))
+  const connections = [
+    ...gmailClients.map((c, idx) => ({
+      id: c.connectionId,
+      email: c.email,
+      label: c.label,
+      color: CONNECTION_COLORS[idx % CONNECTION_COLORS.length]!,
+      provider: "gmail" as const,
+    })),
+    ...imapClients.map((c, idx) => ({
+      id: c.connectionId,
+      email: c.email,
+      label: c.label,
+      color: CONNECTION_COLORS[(gmailClients.length + idx) % CONNECTION_COLORS.length]!,
+      provider: "imap" as const,
+    })),
+  ]
 
   const totalCount = emails.length
 
