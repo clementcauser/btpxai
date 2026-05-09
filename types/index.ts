@@ -130,7 +130,28 @@ export type EmailSummaryWithSource = EmailSummary & {
   connectionEmail: string
   connectionLabel: string
   connectionColor: string
+  connectionProvider: "gmail" | "imap"
 }
+
+export type ImapConnection = {
+  id: string
+  email: string
+  label: string
+  imap_host: string
+  imap_port: number
+  imap_secure: boolean
+  smtp_host: string
+  smtp_port: number
+  smtp_secure: boolean
+  smtp_secure_starttls?: boolean
+  username: string
+  password_encrypted: string
+  workspace_id: string
+  created_at: string
+  updated_at: string
+}
+
+export type ImapConnectionSummary = Pick<ImapConnection, "id" | "email" | "label">
 
 export type EmailSummary = {
   id: string

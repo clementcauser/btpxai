@@ -48,7 +48,7 @@ const CATEGORY_CONFIG: Record<
 
 type Client = { id: string; name: string; email: string | null }
 
-type ConnectionSummary = { id: string; email: string; label: string; color: string }
+type ConnectionSummary = { id: string; email: string; label: string; color: string; provider?: "gmail" | "imap" }
 
 type Props = {
   emails: EmailSummaryWithSource[]
@@ -469,6 +469,7 @@ export function EmailList({ emails, connections, initialStatuses, clients }: Pro
               key={selectedId}
               messageId={selectedId}
               connectionId={selectedConnectionId}
+              connectionProvider={selectedEmail.connectionProvider ?? "gmail"}
               email={selectedEmail}
               statusRecord={selectedStatus ?? null}
               clients={clients}

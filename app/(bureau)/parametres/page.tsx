@@ -44,11 +44,16 @@ export default async function ParametresPage({
 
   const { workspaceId } = await requireWorkspace(user.id)
 
-  const [settings, { data: connectionsData }, autoAckEnabled, lastSyncAt, { data: usersData }] =
+  const [settings, { data: connectionsData }, { data: imapConnectionsData }, autoAckEnabled, lastSyncAt, { data: usersData }] =
     await Promise.all([
       getMultipleSettings(workspaceId, SETTINGS_KEYS),
       supabaseService
         .from("gmail_connections")
+        .select("id, email, label")
+        .eq("workspace_id", workspaceId)
+        .order("created_at", { ascending: true }),
+      (supabaseService as any)
+        .from("imap_connections")
         .select("id, email, label")
         .eq("workspace_id", workspaceId)
         .order("created_at", { ascending: true }),
@@ -58,6 +63,12 @@ export default async function ParametresPage({
     ])
 
   const connections = ((connectionsData ?? []) as unknown) as {
+    id: string
+    email: string
+    label: string
+  }[]
+
+  const imapConnections = ((imapConnectionsData ?? []) as unknown) as {
     id: string
     email: string
     label: string
@@ -91,6 +102,7 @@ export default async function ParametresPage({
       <SettingsShell
         settings={settings}
         connections={connections}
+        imapConnections={imapConnections}
         gmailParam={gmail}
         autoAckEnabled={autoAckEnabled}
         lastSyncAt={lastSyncAt}

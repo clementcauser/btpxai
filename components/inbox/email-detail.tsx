@@ -37,6 +37,7 @@ type Client = { id: string; name: string; email: string | null }
 type Props = {
   messageId: string
   connectionId: string
+  connectionProvider?: "gmail" | "imap"
   email: { id: string; threadId: string; subject: string; from: string }
   statusRecord: EmailStatusRecord | null
   clients: Client[]
@@ -114,6 +115,7 @@ function stripHtml(html: string): string {
 export function EmailDetail({
   messageId,
   connectionId,
+  connectionProvider = "gmail",
   email: emailSummary,
   statusRecord,
   clients,
@@ -154,7 +156,8 @@ export function EmailDetail({
     form.reset()
     setIsLoading(true)
 
-    fetch(`/api/gmail/messages/${messageId}?connectionId=${connectionId}`)
+    const messagesBase = connectionProvider === "imap" ? "/api/imap/messages" : "/api/gmail/messages"
+    fetch(`${messagesBase}/${messageId}?connectionId=${connectionId}`)
       .then((r) => r.json())
       .then((data: { email: EmailDetailType }) => setDetail(data.email))
       .catch(() => toast.error("Impossible de charger l'email"))
@@ -238,7 +241,8 @@ export function EmailDetail({
       const subject = detail.subject.startsWith("Re:")
         ? detail.subject
         : `Re: ${detail.subject}`
-      const res = await fetch("/api/gmail/send", {
+      const sendPath = connectionProvider === "imap" ? "/api/imap/send" : "/api/gmail/send"
+      const res = await fetch(sendPath, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -265,7 +269,11 @@ export function EmailDetail({
       const res = await fetch(`/api/inbox/${messageId}/archive`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ threadId: emailSummary.threadId }),
+        body: JSON.stringify({
+          threadId: emailSummary.threadId,
+          connectionId,
+          provider: connectionProvider,
+        }),
       })
       if (!res.ok) {
         toast.error("Erreur lors de l'archivage")

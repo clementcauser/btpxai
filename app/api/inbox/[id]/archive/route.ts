@@ -3,11 +3,13 @@ import { z } from "zod"
 import { getUser, getUserRole } from "@/lib/supabase/server"
 import { requireWorkspace } from "@/lib/workspaces"
 import { GmailClient } from "@/lib/gmail"
+import { ImapClient } from "@/lib/imap"
 import { upsertEmailStatus } from "@/lib/email-statuses"
 
 const archiveSchema = z.object({
   threadId: z.string().min(1),
   connectionId: z.string().uuid(),
+  provider: z.enum(["gmail", "imap"]).default("gmail"),
 })
 
 export async function POST(
@@ -38,10 +40,14 @@ export async function POST(
 
   try {
     const { workspaceId } = await requireWorkspace(user.id)
-    const client = await GmailClient.forConnection(parsed.data.connectionId, workspaceId)
+    const { connectionId, threadId, provider } = parsed.data
+    const archiveOp =
+      provider === "imap"
+        ? ImapClient.forConnection(connectionId, workspaceId).then((c) => c.archiveEmail(id))
+        : GmailClient.forConnection(connectionId, workspaceId).then((c) => c.archiveEmail(id))
     await Promise.all([
-      client.archiveEmail(id),
-      upsertEmailStatus(workspaceId, id, parsed.data.threadId, "archive"),
+      archiveOp,
+      upsertEmailStatus(workspaceId, id, threadId, "archive"),
     ])
     return NextResponse.json({ success: true })
   } catch (err) {

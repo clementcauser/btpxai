@@ -9,6 +9,7 @@ import { CgvSection } from "./cgv-section"
 import { AutoAcknowledgmentSection } from "./auto-acknowledgment-section"
 import { SheetsSyncSection } from "./sheets-sync-section"
 import { GmailConnectionSection } from "./gmail-connection-section"
+import { ImapConnectionSection } from "./imap-connection-section"
 import { UsersSection } from "./users-section"
 
 type Tab = "entreprise" | "automatisations" | "integrations" | "equipe"
@@ -33,9 +34,12 @@ type GmailConnectionSummary = {
   label: string
 }
 
+type ImapConnectionSummary = { id: string; email: string; label: string }
+
 type Props = {
   settings: Record<string, string>
   connections: GmailConnectionSummary[]
+  imapConnections: ImapConnectionSummary[]
   gmailParam?: string
   autoAckEnabled: boolean
   lastSyncAt: string | null
@@ -45,6 +49,7 @@ type Props = {
 export function SettingsShell({
   settings,
   connections,
+  imapConnections,
   gmailParam,
   autoAckEnabled,
   lastSyncAt,
@@ -106,7 +111,13 @@ export function SettingsShell({
         )}
 
         {activeTab === "integrations" && (
-          <GmailConnectionSection connections={connections} gmailParam={gmailParam} />
+          <>
+            <GmailConnectionSection connections={connections} gmailParam={gmailParam} />
+            <ImapConnectionSection
+              connections={imapConnections}
+              colorOffset={connections.length}
+            />
+          </>
         )}
 
         {activeTab === "equipe" && (
