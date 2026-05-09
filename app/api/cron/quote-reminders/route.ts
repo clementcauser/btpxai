@@ -5,6 +5,7 @@ import { buildReminderSubject, buildReminderHtml } from "@/lib/email/reminder"
 import { env } from "@/lib/env"
 import type { ReminderType } from "@/types"
 import { supabaseService } from "@/lib/supabase/service"
+import { getCompanyInfo } from "@/lib/settings"
 
 function isCronAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET
@@ -22,6 +23,7 @@ type Result = {
 }
 
 async function processWorkspace(workspaceId: string, resend: Resend): Promise<Result[]> {
+  const company = await getCompanyInfo(workspaceId)
   const types: ReminderType[] = ["quote_j7", "quote_j14", "payment"]
   const results: Result[] = []
 
@@ -56,10 +58,10 @@ async function processWorkspace(workspaceId: string, resend: Resend): Promise<Re
 
       try {
         await resend.emails.send({
-          from: "BTP × AI Métallerie <devis@btpxai.fr>",
+          from: `${company.name || "Devis"} <devis@btpxai.fr>`,
           to: [clientEmail],
           subject: buildReminderSubject(quote, type),
-          html: buildReminderHtml(quote, type),
+          html: buildReminderHtml(quote, type, company),
         })
 
         await logReminder(workspaceId, quote.id, type, clientEmail)
