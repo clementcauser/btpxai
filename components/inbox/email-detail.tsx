@@ -614,6 +614,7 @@ export function EmailDetail({
         <PurchaseOrderDialog
           open={showPurchaseOrderDialog}
           onOpenChange={setShowPurchaseOrderDialog}
+          connectionId={connectionId}
           messageId={messageId}
           attachment={purchaseOrderAttachment}
           clients={clients}

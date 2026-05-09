@@ -33,6 +33,7 @@ type Client = { id: string; name: string; email: string | null }
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
+  connectionId: string
   messageId: string
   attachment: EmailAttachment
   clients: Client[]
@@ -95,7 +96,7 @@ function buildDefaultValues(extraction: PurchaseOrderExtraction, clients: Client
   }
 }
 
-export function PurchaseOrderDialog({ open, onOpenChange, messageId, attachment, clients }: Props) {
+export function PurchaseOrderDialog({ open, onOpenChange, connectionId, messageId, attachment, clients }: Props) {
   const [step, setStep] = useState<Step>("extracting")
   const [extraction, setExtraction] = useState<PurchaseOrderExtraction | null>(null)
   const [extractError, setExtractError] = useState<string | null>(null)
@@ -137,6 +138,7 @@ export function PurchaseOrderDialog({ open, onOpenChange, messageId, attachment,
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        connectionId,
         messageId,
         attachmentId: attachment.attachmentId,
         mimeType: attachment.mimeType,

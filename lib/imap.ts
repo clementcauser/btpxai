@@ -21,6 +21,15 @@ export type ImapConnectionRecord = {
   updated_at: string
 }
 
+// ─── Error helpers ───────────────────────────────────────────────────────────
+
+function extractMailError(err: unknown, protocol: "IMAP" | "SMTP"): string {
+  if (!(err instanceof Error)) return `Erreur ${protocol} inconnue`
+  const e = err as Error & { response?: string; responseCode?: number; command?: string }
+  if (e.response) return `${protocol} : ${e.response.trim()}`
+  return `${protocol} : ${e.message}`
+}
+
 // ─── MIME helpers ────────────────────────────────────────────────────────────
 
 function extractTextFromMime(raw: string): { html: string | null; plain: string | null } {
@@ -181,7 +190,7 @@ export class ImapClient {
         pass: decryptPassword(this.conn.password_encrypted),
       },
       logger: false,
-      tls: { rejectUnauthorized: true },
+      tls: { rejectUnauthorized: false },
     })
   }
 
@@ -347,10 +356,15 @@ export class ImapClient {
       secure: config.imap_secure,
       auth: { user: config.username, pass: config.password },
       logger: false,
-      tls: { rejectUnauthorized: true },
+      tls: { rejectUnauthorized: false },
     })
-    await imapClient.connect()
-    await imapClient.logout()
+    try {
+      await imapClient.connect()
+      await imapClient.logout()
+    } catch (err) {
+      const detail = extractMailError(err, "IMAP")
+      throw new Error(detail)
+    }
 
     // Test SMTP
     const transport = nodemailer.createTransport({
@@ -359,7 +373,13 @@ export class ImapClient {
       secure: config.smtp_secure,
       requireTLS: !config.smtp_secure,
       auth: { user: config.username, pass: config.password },
+      tls: { rejectUnauthorized: false },
     })
-    await transport.verify()
+    try {
+      await transport.verify()
+    } catch (err) {
+      const detail = extractMailError(err, "SMTP")
+      throw new Error(detail)
+    }
   }
 }
