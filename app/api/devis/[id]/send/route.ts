@@ -7,6 +7,8 @@ import { getQuoteWithContext, updateQuote } from "@/lib/quotes"
 import { QuotePDFDocument } from "@/components/devis/quote-pdf-document"
 import { buildQuoteEmailHtml, buildQuoteEmailSubject } from "@/lib/email/quote"
 import { env } from "@/lib/env"
+import { requireWorkspace } from "@/lib/workspaces"
+import { getCompanyInfo, getAppSetting } from "@/lib/settings"
 
 export async function POST(
   _req: NextRequest,
@@ -20,6 +22,21 @@ export async function POST(
   }
 
   const supabase = await createClient()
+
+  const { workspaceId } = await requireWorkspace(user.id)
+
+  const [company, conditionsRaw] = await Promise.all([
+    getCompanyInfo(workspaceId),
+    getAppSetting(workspaceId, "quote_conditions"),
+  ])
+  const conditions: string[] = (() => {
+    try {
+      const parsed: unknown = JSON.parse(conditionsRaw ?? "[]")
+      return Array.isArray(parsed) ? (parsed as string[]) : []
+    } catch {
+      return []
+    }
+  })()
 
   let quote
   try {
@@ -40,7 +57,7 @@ export async function POST(
   let pdfBuffer: Buffer
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const element = React.createElement(QuotePDFDocument, { quote }) as any
+    const element = React.createElement(QuotePDFDocument, { quote, company, conditions }) as any
     pdfBuffer = await renderToBuffer(element)
   } catch (err) {
     console.error("[send] pdf render error", err)
@@ -56,10 +73,10 @@ export async function POST(
   const resend = new Resend(env.RESEND_API_KEY)
   try {
     await resend.emails.send({
-      from: "BTP × AI Métallerie <devis@btpxai.fr>",
+      from: `${company.name || "Devis"} <devis@btpxai.fr>`,
       to: [clientEmail],
-      subject: buildQuoteEmailSubject(quote),
-      html: buildQuoteEmailHtml(quote),
+      subject: buildQuoteEmailSubject(quote, company),
+      html: buildQuoteEmailHtml(quote, company),
       attachments: [
         {
           filename: `${ref}.pdf`,
