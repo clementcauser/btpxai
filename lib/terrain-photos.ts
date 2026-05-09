@@ -28,11 +28,12 @@ export async function getTerrainPhotos(
 
 export async function createTerrainPhoto(
   supabase: Supabase,
+  workspaceId: string,
   input: CreateTerrainPhotoInput
 ): Promise<TerrainPhoto> {
   const { data, error } = await supabase
     .from("terrain_photos")
-    .insert(input)
+    .insert({ ...input, workspace_id: workspaceId })
     .select()
     .single()
   if (error) throw error

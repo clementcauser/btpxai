@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
+import { requireWorkspace } from "@/lib/workspaces"
 import { getTerrainPhotos, createTerrainPhoto } from "@/lib/terrain-photos"
 
 const getSchema = z.object({
@@ -73,7 +74,8 @@ export async function POST(req: NextRequest) {
     .getPublicUrl(fileName)
 
   try {
-    const photo = await createTerrainPhoto(supabaseService, {
+    const { workspaceId } = await requireWorkspace(user.id)
+    const photo = await createTerrainPhoto(supabaseService, workspaceId, {
       project_id: projectId,
       user_id: user.id,
       photo_url: urlData.publicUrl,
