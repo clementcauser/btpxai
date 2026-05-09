@@ -4,12 +4,23 @@ import { createClient, getUserRole } from "@/lib/supabase/server"
 import { requireWorkspace } from "@/lib/workspaces"
 import { getMultipleSettings, setAppSetting } from "@/lib/settings"
 
-const COMPANY_KEYS = ["company_name", "company_address", "company_siret", "company_logo_url"]
+const COMPANY_KEYS = [
+  "company_name",
+  "company_address",
+  "company_siret",
+  "company_logo_url",
+  "company_phone",
+  "company_email",
+  "company_tva",
+]
 
 const bodySchema = z.object({
   company_name: z.string().max(200),
   company_address: z.string().max(500),
   company_siret: z.string().max(20),
+  company_phone: z.string().max(30),
+  company_email: z.string().max(200),
+  company_tva: z.string().max(30),
 })
 
 export async function GET(): Promise<NextResponse> {
@@ -37,11 +48,14 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 })
 
   const { workspaceId } = await requireWorkspace(user.id)
-  const { company_name, company_address, company_siret } = parsed.data
+  const { company_name, company_address, company_siret, company_phone, company_email, company_tva } = parsed.data
   await Promise.all([
     setAppSetting(workspaceId, "company_name", company_name),
     setAppSetting(workspaceId, "company_address", company_address),
     setAppSetting(workspaceId, "company_siret", company_siret),
+    setAppSetting(workspaceId, "company_phone", company_phone),
+    setAppSetting(workspaceId, "company_email", company_email),
+    setAppSetting(workspaceId, "company_tva", company_tva),
   ])
 
   return NextResponse.json({ ok: true })

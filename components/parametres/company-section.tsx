@@ -13,6 +13,9 @@ const schema = z.object({
   company_name: z.string().max(200),
   company_address: z.string().max(500),
   company_siret: z.string().max(20),
+  company_phone: z.string().max(30),
+  company_email: z.string().max(200),
+  company_tva: z.string().max(30),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -35,6 +38,9 @@ export function CompanySection({ initialSettings }: Props) {
       company_name: initialSettings.company_name ?? "",
       company_address: initialSettings.company_address ?? "",
       company_siret: initialSettings.company_siret ?? "",
+      company_phone: initialSettings.company_phone ?? "",
+      company_email: initialSettings.company_email ?? "",
+      company_tva: initialSettings.company_tva ?? "",
     },
   })
 
@@ -191,6 +197,56 @@ export function CompanySection({ initialSettings }: Props) {
           />
           {errors.company_siret && (
             <p className="text-xs text-destructive">{errors.company_siret.message}</p>
+          )}
+        </div>
+
+        {/* Téléphone */}
+        <div className="space-y-1.5">
+          <Label htmlFor="company_phone" className="text-xs tracking-wider uppercase text-muted-foreground">
+            Téléphone
+          </Label>
+          <Input
+            id="company_phone"
+            data-testid="company-phone-input"
+            placeholder="01 23 45 67 89"
+            {...register("company_phone")}
+          />
+          {errors.company_phone && (
+            <p className="text-xs text-destructive">{errors.company_phone.message}</p>
+          )}
+        </div>
+
+        {/* Email de contact */}
+        <div className="space-y-1.5">
+          <Label htmlFor="company_email" className="text-xs tracking-wider uppercase text-muted-foreground">
+            Email de contact
+          </Label>
+          <Input
+            id="company_email"
+            data-testid="company-email-input"
+            type="email"
+            placeholder="contact@entreprise.fr"
+            {...register("company_email")}
+          />
+          {errors.company_email && (
+            <p className="text-xs text-destructive">{errors.company_email.message}</p>
+          )}
+        </div>
+
+        {/* N° TVA */}
+        <div className="space-y-1.5">
+          <Label htmlFor="company_tva" className="text-xs tracking-wider uppercase text-muted-foreground">
+            N° TVA intracommunautaire
+          </Label>
+          <Input
+            id="company_tva"
+            data-testid="company-tva-input"
+            placeholder="FR12 123456789"
+            className="font-mono"
+            {...register("company_tva")}
+          />
+          {errors.company_tva && (
+            <p className="text-xs text-destructive">{errors.company_tva.message}</p>
           )}
         </div>
 
