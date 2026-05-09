@@ -48,3 +48,33 @@ export async function getMultipleSettings(
 
   return result;
 }
+
+export type CompanyInfo = {
+  name: string
+  address: string
+  phone: string
+  email: string
+  siret: string
+  tva: string
+}
+
+const COMPANY_KEYS = [
+  "company_name",
+  "company_address",
+  "company_phone",
+  "company_email",
+  "company_siret",
+  "company_tva",
+] as const
+
+export async function getCompanyInfo(workspaceId: string): Promise<CompanyInfo> {
+  const s = await getMultipleSettings(workspaceId, [...COMPANY_KEYS])
+  return {
+    name: s.company_name ?? "",
+    address: s.company_address ?? "",
+    phone: s.company_phone ?? "",
+    email: s.company_email ?? "",
+    siret: s.company_siret ?? "",
+    tva: s.company_tva ?? "",
+  }
+}
