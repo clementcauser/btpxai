@@ -293,6 +293,15 @@ describe("buildWeeklyReportSubject", () => {
 // ─── buildWeeklyReportHtml ────────────────────────────────────────────────────
 
 describe("buildWeeklyReportHtml", () => {
+  const mockCompany = {
+    name: "Acier Forge SAS",
+    address: "12 rue de la Forge, 75001 Paris",
+    phone: "01 23 45 67 89",
+    email: "contact@acierforge.fr",
+    siret: "123 456 789 00010",
+    tva: "FR12 123456789",
+  }
+
   const data: WeeklyReportData = {
     weekRange: {
       start: "2026-04-27T00:00:00.000Z",
@@ -315,7 +324,7 @@ describe("buildWeeklyReportHtml", () => {
   }
 
   it("renders quote counts in the HTML", () => {
-    const html = buildWeeklyReportHtml(data, narrative)
+    const html = buildWeeklyReportHtml(data, narrative, mockCompany)
     expect(html).toContain(">5<")   // sent
     expect(html).toContain(">3<")   // accepted
     expect(html).toContain(">1<")   // rejected
@@ -323,18 +332,18 @@ describe("buildWeeklyReportHtml", () => {
   })
 
   it("renders the summary text", () => {
-    const html = buildWeeklyReportHtml(data, narrative)
+    const html = buildWeeklyReportHtml(data, narrative, mockCompany)
     expect(html).toContain(narrative.summary)
   })
 
   it("renders highlights", () => {
-    const html = buildWeeklyReportHtml(data, narrative)
+    const html = buildWeeklyReportHtml(data, narrative, mockCompany)
     expect(html).toContain(narrative.highlights[0])
     expect(html).toContain(narrative.highlights[1])
   })
 
   it("renders attention items when present", () => {
-    const html = buildWeeklyReportHtml(data, narrative)
+    const html = buildWeeklyReportHtml(data, narrative, mockCompany)
     expect(html).toContain(narrative.attentionItems[0])
   })
 
@@ -342,12 +351,12 @@ describe("buildWeeklyReportHtml", () => {
     const html = buildWeeklyReportHtml(data, {
       ...narrative,
       attentionItems: [],
-    })
+    }, mockCompany)
     expect(html).not.toContain("Points d'attention")
   })
 
-  it("includes BTP branding", () => {
-    const html = buildWeeklyReportHtml(data, narrative)
-    expect(html).toContain("BTP × AI Métallerie")
+  it("includes company branding", () => {
+    const html = buildWeeklyReportHtml(data, narrative, mockCompany)
+    expect(html).toContain("Acier Forge SAS")
   })
 })
