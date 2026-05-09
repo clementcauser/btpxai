@@ -4,6 +4,7 @@ import { User } from "lucide-react"
 import { getUser, getUserRole } from "@/lib/supabase/server"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { ThemeSelector } from "@/components/theme-selector"
 
 export const metadata: Metadata = {
   title: "Profil — btpxai",
@@ -62,6 +63,10 @@ export default async function ProfilPage() {
               </Badge>
             </div>
           </div>
+        </div>
+
+        <div className="rounded-sm border border-border bg-card p-5 max-w-sm">
+          <ThemeSelector />
         </div>
       </div>
     </div>

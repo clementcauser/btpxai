@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Barlow_Condensed, DM_Sans, Geist_Mono } from "next/font/google"
+import { ThemeProvider } from "next-themes"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
@@ -34,10 +35,18 @@ export default function RootLayout({
     <html
       lang="fr"
       className={`${barlowCondensed.variable} ${dmSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <TooltipProvider delay={300}>{children}</TooltipProvider>
-        <Toaster position="bottom-right" />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TooltipProvider delay={300}>{children}</TooltipProvider>
+          <Toaster position="bottom-right" />
+        </ThemeProvider>
       </body>
     </html>
   )
