@@ -9,9 +9,6 @@ const required = [
   "RESEND_API_KEY",
   "NEXT_PUBLIC_APP_URL",
   "NODE_ENCRYPTION_KEY",
-  "SEED_SUPERADMIN_EMAIL",
-  "SEED_SUPERADMIN_PASSWORD",
-  "SEED_SUPERADMIN_NAME",
 ] as const;
 
 function validateEnv() {
@@ -19,7 +16,7 @@ function validateEnv() {
 
   if (missing.length > 0) {
     throw new Error(
-      `Missing environment variables:\n${missing.map((k) => `  - ${k}`).join("\n")}\n\nCopy .env.example to .env.local and fill in the values.`
+      `Missing environment variables:\n${missing.map((k) => `  - ${k}`).join("\n")}\n\nCopy .env.local and fill in the values.`
     );
   }
 
@@ -34,9 +31,6 @@ function validateEnv() {
     RESEND_API_KEY: process.env.RESEND_API_KEY!,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL!,
     NODE_ENCRYPTION_KEY: process.env.NODE_ENCRYPTION_KEY!,
-    SEED_SUPERADMIN_EMAIL: process.env.SEED_SUPERADMIN_EMAIL!,
-    SEED_SUPERADMIN_PASSWORD: process.env.SEED_SUPERADMIN_PASSWORD!,
-    SEED_SUPERADMIN_NAME: process.env.SEED_SUPERADMIN_NAME!,
   };
 }
 
