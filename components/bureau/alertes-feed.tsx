@@ -12,26 +12,26 @@ const URGENCY_CONFIG = {
   faible: {
     label: "Faible",
     icon: "ℹ",
-    border: "oklch(0.45 0.008 258)",
-    bg: "oklch(0.17 0.008 258)",
-    badge: "oklch(0.55 0.008 258)",
-    badgeText: "oklch(0.92 0.012 78)",
+    border: "var(--alerte-faible-border)",
+    bg: "var(--alerte-faible-bg)",
+    badge: "var(--alerte-faible-badge)",
+    badgeText: "var(--alerte-faible-badge-text)",
   },
   elevee: {
     label: "Élevée",
     icon: "⚠",
-    border: "oklch(0.65 0.18 75)",
-    bg: "oklch(0.19 0.04 75)",
-    badge: "oklch(0.45 0.12 75)",
-    badgeText: "oklch(0.95 0.14 75)",
+    border: "var(--alerte-elevee-border)",
+    bg: "var(--alerte-elevee-bg)",
+    badge: "var(--alerte-elevee-badge)",
+    badgeText: "var(--alerte-elevee-badge-text)",
   },
   critique: {
     label: "Critique",
     icon: "🛑",
-    border: "oklch(0.62 0.22 25)",
-    bg: "oklch(0.19 0.08 25)",
-    badge: "oklch(0.45 0.18 25)",
-    badgeText: "oklch(0.95 0.2 25)",
+    border: "var(--alerte-critique-border)",
+    bg: "var(--alerte-critique-bg)",
+    badge: "var(--alerte-critique-badge)",
+    badgeText: "var(--alerte-critique-badge-text)",
   },
 }
 
@@ -154,17 +154,17 @@ export default function AlertesFeed({ initialAlertes = [] }: Props) {
               className="flex items-center gap-2 px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition-all"
               style={{
                 fontFamily: "var(--font-barlow)",
-                background: isActive ? "oklch(0.69 0.168 47 / 0.15)" : "oklch(0.17 0.008 258)",
-                color: isActive ? "oklch(0.69 0.168 47)" : "oklch(0.55 0.008 258)",
-                border: `1px solid ${isActive ? "oklch(0.69 0.168 47 / 0.4)" : "oklch(0.25 0.008 258)"}`,
+                background: isActive ? "oklch(0.69 0.168 47 / 0.15)" : "var(--alerte-filter-bg)",
+                color: isActive ? "oklch(0.69 0.168 47)" : "var(--alerte-filter-color)",
+                border: `1px solid ${isActive ? "oklch(0.69 0.168 47 / 0.4)" : "var(--alerte-filter-border)"}`,
               }}
             >
               {f.label}
               <span
                 className="flex items-center justify-center rounded-sm text-[10px] font-bold min-w-[18px] h-[18px] px-1"
                 style={{
-                  background: isActive ? "oklch(0.69 0.168 47 / 0.2)" : "oklch(0.22 0.008 258)",
-                  color: isActive ? "oklch(0.9 0.15 47)" : "oklch(0.55 0.008 258)",
+                  background: isActive ? "oklch(0.69 0.168 47 / 0.2)" : "var(--alerte-filter-badge-bg)",
+                  color: isActive ? "oklch(0.9 0.15 47)" : "var(--alerte-filter-badge-color)",
                 }}
               >
                 {count}
@@ -281,9 +281,9 @@ export default function AlertesFeed({ initialAlertes = [] }: Props) {
                         height: "44px",
                         fontFamily: "var(--font-barlow)",
                         fontSize: "12px",
-                        background: nextStatus === "resolu" ? "oklch(0.25 0.08 150)" : "oklch(0.25 0.08 75)",
-                        color: nextStatus === "resolu" ? "oklch(0.75 0.15 150)" : "oklch(0.85 0.15 75)",
-                        border: `1px solid ${nextStatus === "resolu" ? "oklch(0.4 0.12 150)" : "oklch(0.5 0.14 75)"}`,
+                        background: nextStatus === "resolu" ? "var(--alerte-action-resolu-bg)" : "var(--alerte-action-pec-bg)",
+                        color: nextStatus === "resolu" ? "var(--alerte-action-resolu-color)" : "var(--alerte-action-pec-color)",
+                        border: `1px solid ${nextStatus === "resolu" ? "var(--alerte-action-resolu-border)" : "var(--alerte-action-pec-border)"}`,
                       }}
                     >
                       {isUpdating ? "Mise à jour…" : NEXT_LABEL[alerte.status]}

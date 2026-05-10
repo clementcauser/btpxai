@@ -6,9 +6,9 @@ import { getDashboardMetrics } from "@/lib/dashboard";
 import { getAppSetting } from "@/lib/settings";
 import { requireWorkspace } from "@/lib/workspaces";
 import { DashboardAutoRefresh } from "@/components/dashboard/auto-refresh";
+import { DashboardNewClientAction } from "@/components/dashboard/new-client-action";
 import {
   FileText,
-  Users,
   Mail,
   Package,
   AlertTriangle,
@@ -45,13 +45,6 @@ const quickActions = [
     description: "Emails classifiés automatiquement",
     href: "/inbox",
     icon: Mail,
-    external: false,
-  },
-  {
-    label: "Nouveau client",
-    description: "Ajouter un contact au répertoire",
-    href: "/clients/nouveau",
-    icon: Users,
     external: false,
   },
 ];
@@ -388,6 +381,7 @@ export default async function DashboardPage() {
               </div>
             </Link>
           ))}
+          <DashboardNewClientAction />
           {sheetsUrl && (
             <a
               href={sheetsUrl}
