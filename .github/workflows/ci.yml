@@ -41,6 +41,10 @@ jobs:
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       IS_E2E: "true"
       OPENAI_API_KEY: fake-openai-api-key-for-ci-testing
+      NODE_ENCRYPTION_KEY: aeeff606779133747037cb8cd4e064ff4df29cdff839414a7968e552b93ccd60
+      SEED_SUPERADMIN_EMAIL: ci-superadmin@example.com
+      SEED_SUPERADMIN_PASSWORD: ci-fake-password
+      SEED_SUPERADMIN_NAME: CI Superadmin
     steps:
       - uses: actions/checkout@v4
 
