@@ -74,7 +74,7 @@ describe("createTerrainPhoto", () => {
     const builder = makeBuilder({ data: mockPhoto, error: null })
     const supabase = makeSupabase(builder)
 
-    const result = await createTerrainPhoto(supabase, {
+    const result = await createTerrainPhoto(supabase, "ws1", {
       project_id: "p1",
       user_id: "u1",
       photo_url: "https://storage.example.com/terrain-photos/p1/ph1.jpg",
@@ -89,6 +89,7 @@ describe("createTerrainPhoto", () => {
       photo_url: "https://storage.example.com/terrain-photos/p1/ph1.jpg",
       lat: 48.8566,
       lng: 2.3522,
+      workspace_id: "ws1",
     })
     expect(builder.single).toHaveBeenCalled()
     expect(result).toEqual(mockPhoto)
@@ -98,7 +99,7 @@ describe("createTerrainPhoto", () => {
     const builder = makeBuilder({ data: mockPhotoNoGeo, error: null })
     const supabase = makeSupabase(builder)
 
-    const result = await createTerrainPhoto(supabase, {
+    const result = await createTerrainPhoto(supabase, "ws1", {
       project_id: "p1",
       user_id: "u1",
       photo_url: "https://storage.example.com/terrain-photos/p1/ph2.jpg",
@@ -107,7 +108,7 @@ describe("createTerrainPhoto", () => {
     })
 
     expect(builder.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ lat: null, lng: null })
+      expect.objectContaining({ lat: null, lng: null, workspace_id: "ws1" })
     )
     expect(result).toEqual(mockPhotoNoGeo)
   })
@@ -118,7 +119,7 @@ describe("createTerrainPhoto", () => {
     const supabase = makeSupabase(builder)
 
     await expect(
-      createTerrainPhoto(supabase, {
+      createTerrainPhoto(supabase, "ws1", {
         project_id: "p1",
         user_id: "u1",
         photo_url: "https://storage.example.com/terrain-photos/p1/ph1.jpg",

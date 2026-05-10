@@ -28,6 +28,7 @@ const SETTINGS_KEYS = [
   "reminder_delay_j14",
   "quote_conditions",
   "sheets_spreadsheet_url",
+  "default_cgv",
 ]
 
 type SearchParams = Promise<{ gmail?: string }>

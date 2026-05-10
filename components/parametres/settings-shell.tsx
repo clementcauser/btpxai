@@ -6,6 +6,7 @@ import { CompanySection } from "./company-section"
 import { ReportRecipientsSection } from "./report-recipients-section"
 import { RemindersSection } from "./reminders-section"
 import { QuoteConditionsSection } from "./quote-conditions-section"
+import { CgvSection } from "./cgv-section"
 import { AutoAcknowledgmentSection } from "./auto-acknowledgment-section"
 import { SheetsSyncSection } from "./sheets-sync-section"
 import { GmailConnectionSection } from "./gmail-connection-section"
@@ -94,6 +95,7 @@ export function SettingsShell({
         {activeTab === "entreprise" && (
           <>
             <CompanySection initialSettings={settings} />
+            <CgvSection initialCgv={settings.default_cgv ?? ""} />
             <QuoteConditionsSection
               initialConditions={(() => {
                 try {
