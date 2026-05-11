@@ -20,8 +20,8 @@ export async function getEvents(
   workspaceId: string,
   filters: GetEventsFilters
 ): Promise<CalendarEventWithDetails[]> {
-  // @ts-ignore
-  const { data, error } = await supabase
+  // Tables not yet in generated types — migration pending
+  const { data, error } = await (supabase as any)
     .from("calendar_events")
     .select(`
       *,
@@ -50,8 +50,8 @@ export async function getEvent(
   supabase: Supabase,
   id: string
 ): Promise<CalendarEventWithDetails> {
-  // @ts-ignore
-  const { data, error } = await supabase
+  // Tables not yet in generated types — migration pending
+  const { data, error } = await (supabase as any)
     .from("calendar_events")
     .select(`
       *,
@@ -68,10 +68,10 @@ export async function createEvent(
   supabase: Supabase,
   workspaceId: string,
   input: CreateCalendarEventInput
-): Promise<CalendarEvent> {
+): Promise<CalendarEventWithDetails> {
   const { assignee_ids, ...rest } = input
-  // @ts-ignore
-  const { data, error } = await supabase
+  // Tables not yet in generated types — migration pending
+  const { data, error } = await (supabase as any)
     .from("calendar_events")
     .insert({ workspace_id: workspaceId, ...rest })
     .select()
@@ -79,14 +79,14 @@ export async function createEvent(
   if (error) throw error
 
   if (assignee_ids && assignee_ids.length > 0) {
-    // @ts-ignore
-    const { error: assignError } = await supabase
+    // Tables not yet in generated types — migration pending
+    const { error: assignError } = await (supabase as any)
       .from("calendar_event_assignees")
-      .insert(assignee_ids.map((user_id) => ({ event_id: data.id, user_id })))
+      .insert(assignee_ids.map((user_id: string) => ({ event_id: data.id, user_id })))
     if (assignError) throw assignError
   }
 
-  return data as CalendarEvent
+  return getEvent(supabase, data.id)
 }
 
 export async function updateEvent(
@@ -97,8 +97,8 @@ export async function updateEvent(
   const { assignee_ids, ...rest } = input
 
   if (Object.keys(rest).length > 0) {
-    // @ts-ignore
-    const { error } = await supabase
+    // Tables not yet in generated types — migration pending
+    const { error } = await (supabase as any)
       .from("calendar_events")
       .update(rest)
       .eq("id", id)
@@ -106,17 +106,17 @@ export async function updateEvent(
   }
 
   if (assignee_ids !== undefined) {
-    // @ts-ignore
-    await supabase
+    // Tables not yet in generated types — migration pending
+    await (supabase as any)
       .from("calendar_event_assignees")
       .delete()
       .eq("event_id", id)
 
     if (assignee_ids.length > 0) {
-      // @ts-ignore
-      const { error } = await supabase
+      // Tables not yet in generated types — migration pending
+      const { error } = await (supabase as any)
         .from("calendar_event_assignees")
-        .insert(assignee_ids.map((user_id) => ({ event_id: id, user_id })))
+        .insert(assignee_ids.map((user_id: string) => ({ event_id: id, user_id })))
       if (error) throw error
     }
   }
@@ -128,8 +128,8 @@ export async function deleteEvent(
   supabase: Supabase,
   id: string
 ): Promise<void> {
-  // @ts-ignore
-  const { error } = await supabase
+  // Tables not yet in generated types — migration pending
+  const { error } = await (supabase as any)
     .from("calendar_events")
     .delete()
     .eq("id", id)

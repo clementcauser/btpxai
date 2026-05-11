@@ -24,8 +24,8 @@ export async function getEventTypes(
   supabase: Supabase,
   workspaceId: string
 ): Promise<CalendarEventType[]> {
-  // @ts-ignore
-  const { data, error } = await supabase
+  // Tables not yet in generated types — migration pending
+  const { data, error } = await (supabase as any)
     .from("calendar_event_types")
     .select("*")
     .eq("workspace_id", workspaceId)
@@ -39,8 +39,8 @@ export async function createEventType(
   workspaceId: string,
   input: CreateCalendarEventTypeInput
 ): Promise<CalendarEventType> {
-  // @ts-ignore
-  const { data, error } = await supabase
+  // Tables not yet in generated types — migration pending
+  const { data, error } = await (supabase as any)
     .from("calendar_event_types")
     .insert({ workspace_id: workspaceId, ...input })
     .select()
@@ -54,8 +54,8 @@ export async function updateEventType(
   id: string,
   input: UpdateCalendarEventTypeInput
 ): Promise<CalendarEventType> {
-  // @ts-ignore
-  const { data, error } = await supabase
+  // Tables not yet in generated types — migration pending
+  const { data, error } = await (supabase as any)
     .from("calendar_event_types")
     .update(input)
     .eq("id", id)
@@ -69,8 +69,8 @@ export async function deleteEventType(
   supabase: Supabase,
   id: string
 ): Promise<void> {
-  // @ts-ignore
-  const { data: usedBy } = await supabase
+  // Tables not yet in generated types — migration pending
+  const { data: usedBy } = await (supabase as any)
     .from("calendar_events")
     .select("id")
     .eq("event_type_id", id)
@@ -78,8 +78,8 @@ export async function deleteEventType(
   if (usedBy && usedBy.length > 0) {
     throw new Error("Ce type est utilisé par des événements existants")
   }
-  // @ts-ignore
-  const { error } = await supabase
+  // Tables not yet in generated types — migration pending
+  const { error } = await (supabase as any)
     .from("calendar_event_types")
     .delete()
     .eq("id", id)
@@ -96,8 +96,8 @@ export async function seedDefaultEventTypes(
     color: t.color,
     is_preset: true,
   }))
-  // @ts-ignore
-  const { error } = await supabase
+  // Tables not yet in generated types — migration pending
+  const { error } = await (supabase as any)
     .from("calendar_event_types")
     .insert(rows)
   if (error) throw error

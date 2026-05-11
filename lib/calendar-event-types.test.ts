@@ -47,6 +47,23 @@ describe("createEventType", () => {
   })
 })
 
+describe("updateEventType", () => {
+  it("updates label and color", async () => {
+    const updated = { id: "type-1", label: "Nouveau label", color: "#22c55e" }
+    mockFrom.mockReturnValue({
+      update: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({ data: updated, error: null }),
+          }),
+        }),
+      }),
+    })
+    const result = await updateEventType(supabase, "type-1", { label: "Nouveau label", color: "#22c55e" })
+    expect(result).toEqual(updated)
+  })
+})
+
 describe("deleteEventType", () => {
   it("throws if type is used by an event", async () => {
     mockFrom
