@@ -298,3 +298,51 @@ export type ProjectWithClient = {
   created_at: string
   clients: { id: string; name: string } | null
 }
+
+// ─── Calendar types ───────────────────────────────────────────────────────────
+
+export type CalendarEventType = {
+  id: string
+  workspace_id: string
+  label: string
+  color: string
+  is_preset: boolean
+  created_at: string
+}
+
+export type CalendarEvent = {
+  id: string
+  workspace_id: string
+  title: string
+  description: string | null
+  start_at: string
+  end_at: string
+  event_type_id: string | null
+  created_by: string | null
+  created_at: string
+}
+
+export type CalendarEventWithDetails = CalendarEvent & {
+  event_type: CalendarEventType | null
+  assignees: { user_id: string }[]
+}
+
+export type CreateCalendarEventInput = {
+  title: string
+  description?: string | null
+  start_at: string
+  end_at: string
+  event_type_id?: string | null
+  assignee_ids?: string[]
+}
+
+export type UpdateCalendarEventInput = Partial<CreateCalendarEventInput>
+
+export type CreateCalendarEventTypeInput = {
+  label: string
+  color: string
+}
+
+export type UpdateCalendarEventTypeInput = Partial<CreateCalendarEventTypeInput>
+
+export type CalendarView = "month" | "week" | "day"
