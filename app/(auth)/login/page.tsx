@@ -1,9 +1,9 @@
-import type { Metadata } from "next"
-import { LoginForm } from "@/components/auth/login-form"
+import type { Metadata } from "next";
+import { LoginForm } from "@/components/auth/login-form";
 
 export const metadata: Metadata = {
   title: "Connexion — BTP×AI",
-}
+};
 
 export default function LoginPage() {
   return (
@@ -17,7 +17,7 @@ export default function LoginPage() {
           BTP<span className="text-primary">×</span>AI
         </h1>
         <p className="mt-1 text-xs text-muted-foreground tracking-wider uppercase">
-          Gestion métallerie
+          Gestion de chantiers et devis
         </p>
       </div>
 
@@ -29,5 +29,5 @@ export default function LoginPage() {
         <LoginForm />
       </div>
     </div>
-  )
+  );
 }
