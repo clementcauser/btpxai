@@ -7,6 +7,8 @@ import { requireWorkspace } from "@/lib/workspaces"
 import { getAutoAcknowledgmentEnabled } from "@/lib/acknowledgments"
 import { getLastSyncAt } from "@/lib/sheets"
 import { getMultipleSettings } from "@/lib/settings"
+import { getEventTypes } from "@/lib/calendar-event-types"
+import { createClient } from "@/lib/supabase/server"
 import { SettingsShell } from "@/components/parametres/settings-shell"
 
 export const metadata: Metadata = {
@@ -47,8 +49,9 @@ export default async function ParametresPage({
   const { gmail } = await searchParams
 
   const { workspaceId } = await requireWorkspace(user.id)
+  const supabase = await createClient()
 
-  const [settings, { data: connectionsData }, { data: imapConnectionsData }, autoAckEnabled, lastSyncAt, { data: usersData }] =
+  const [settings, { data: connectionsData }, { data: imapConnectionsData }, autoAckEnabled, lastSyncAt, { data: usersData }, eventTypes] =
     await Promise.all([
       getMultipleSettings(workspaceId, SETTINGS_KEYS),
       supabaseService
@@ -64,6 +67,7 @@ export default async function ParametresPage({
       getAutoAcknowledgmentEnabled(workspaceId),
       getLastSyncAt(workspaceId),
       supabaseService.auth.admin.listUsers({ perPage: 200 }),
+      getEventTypes(supabase, workspaceId).catch(() => []),
     ])
 
   const connections = ((connectionsData ?? []) as unknown) as {
@@ -111,6 +115,7 @@ export default async function ParametresPage({
         autoAckEnabled={autoAckEnabled}
         lastSyncAt={lastSyncAt}
         users={users}
+        eventTypes={eventTypes}
       />
     </div>
   )
