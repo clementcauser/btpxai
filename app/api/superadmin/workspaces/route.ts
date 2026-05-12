@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getUser, getUserRole } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
+import { seedDefaultEventTypes } from "@/lib/calendar-event-types"
 
 const createSchema = z.object({
   name: z.string().min(2, "Nom requis (2 caractères minimum)"),
@@ -61,6 +62,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Ce slug est déjà utilisé" }, { status: 409 })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  // Seed default calendar event types for the new workspace
+  await seedDefaultEventTypes(supabaseService as any, workspace.id).catch(() => {})
 
   return NextResponse.json({ workspace }, { status: 201 })
 }
