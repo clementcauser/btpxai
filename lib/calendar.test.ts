@@ -45,6 +45,22 @@ describe("getEvents", () => {
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe("ev-1")
   })
+
+  it("returns empty array when no events in range", async () => {
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockReturnThis(),
+        lte: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    })
+    const result = await getEvents(supabase, "ws-1", {
+      from: "2026-06-01T00:00:00Z",
+      to: "2026-06-30T23:59:59Z",
+    })
+    expect(result).toEqual([])
+  })
 })
 
 describe("createEvent", () => {
