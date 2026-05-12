@@ -11,6 +11,7 @@ import {
   HardHat,
   Package,
   AlertTriangle,
+  CalendarDays,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -28,6 +29,7 @@ const bureauNavBase: Omit<NavItem, "badge">[] = [
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/inbox", label: "Messagerie", icon: Mail },
   { href: "/materiaux", label: "Matériaux", icon: Package },
+  { href: "/calendrier", label: "Calendrier", icon: CalendarDays },
   { href: "/alertes", label: "Alertes", icon: AlertTriangle, isAlert: true },
   { href: "/parametres", label: "Paramètres", icon: Settings },
 ]
