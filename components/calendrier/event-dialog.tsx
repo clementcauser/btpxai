@@ -181,7 +181,7 @@ export function EventDialog({
 
           <div className="space-y-1.5">
             <Label>Type</Label>
-            <Select onValueChange={(v) => setValue("event_type_id", v)}>
+            <Select onValueChange={(v) => setValue("event_type_id", v as string)}>
               <SelectTrigger>
                 <SelectValue placeholder="Choisir un type..." />
               </SelectTrigger>

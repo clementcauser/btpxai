@@ -252,5 +252,7 @@ function DayView({ currentDate, events, onEventClick }: Omit<CalendarGridProps, 
 export function CalendarGrid(props: CalendarGridProps) {
   if (props.view === "month") return <MonthView {...props} />
   if (props.view === "week") return <WeekView {...props} />
-  return <DayView {...props} onDayClick={() => {}} />
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { onDayClick: _onDayClick, view: _view, ...dayProps } = props
+  return <DayView {...dayProps} />
 }
