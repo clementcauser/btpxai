@@ -1,19 +1,19 @@
-import { redirect } from "next/navigation"
-import type { Metadata } from "next"
-import { Settings } from "lucide-react"
-import { getUser, getUserRole } from "@/lib/supabase/server"
-import { supabaseService } from "@/lib/supabase/service"
-import { requireWorkspace } from "@/lib/workspaces"
-import { getAutoAcknowledgmentEnabled } from "@/lib/acknowledgments"
-import { getLastSyncAt } from "@/lib/sheets"
-import { getMultipleSettings } from "@/lib/settings"
-import { getEventTypes } from "@/lib/calendar-event-types"
-import { createClient } from "@/lib/supabase/server"
-import { SettingsShell } from "@/components/parametres/settings-shell"
+import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { Settings } from "lucide-react";
+import { getUser, getUserRole } from "@/lib/supabase/server";
+import { supabaseService } from "@/lib/supabase/service";
+import { requireWorkspace } from "@/lib/workspaces";
+import { getAutoAcknowledgmentEnabled } from "@/lib/acknowledgments";
+import { getLastSyncAt } from "@/lib/sheets";
+import { getMultipleSettings } from "@/lib/settings";
+import { getEventTypes } from "@/lib/calendar-event-types";
+import { createClient } from "@/lib/supabase/server";
+import { SettingsShell } from "@/components/parametres/settings-shell";
 
 export const metadata: Metadata = {
   title: "Paramètres — BTP×AI",
-}
+};
 
 const SETTINGS_KEYS = [
   "company_name",
@@ -31,63 +31,84 @@ const SETTINGS_KEYS = [
   "quote_conditions",
   "sheets_spreadsheet_url",
   "default_cgv",
-]
+];
 
-type SearchParams = Promise<{ gmail?: string }>
+type SearchParams = Promise<{ gmail?: string }>;
 
 export default async function ParametresPage({
   searchParams,
 }: {
-  searchParams: SearchParams
+  searchParams: SearchParams;
 }) {
-  const user = await getUser()
-  if (!user) redirect("/login")
+  const user = await getUser();
+  if (!user) redirect("/login");
 
-  const role = getUserRole(user)
-  if (role !== "admin") redirect("/dashboard")
+  const role = getUserRole(user);
+  if (role !== "admin") redirect("/dashboard");
 
-  const { gmail } = await searchParams
+  const { gmail } = await searchParams;
 
-  const { workspaceId } = await requireWorkspace(user.id)
-  const supabase = await createClient()
+  const { workspaceId } = await requireWorkspace(user.id);
+  const supabase = await createClient();
 
-  const [settings, { data: connectionsData }, { data: imapConnectionsData }, autoAckEnabled, lastSyncAt, { data: usersData }, eventTypes] =
-    await Promise.all([
-      getMultipleSettings(workspaceId, SETTINGS_KEYS),
-      supabaseService
-        .from("gmail_connections")
-        .select("id, email, label")
-        .eq("workspace_id", workspaceId)
-        .order("created_at", { ascending: true }),
-      (supabaseService as any)
-        .from("imap_connections")
-        .select("id, email, label")
-        .eq("workspace_id", workspaceId)
-        .order("created_at", { ascending: true }),
-      getAutoAcknowledgmentEnabled(workspaceId),
-      getLastSyncAt(workspaceId),
-      supabaseService.auth.admin.listUsers({ perPage: 200 }),
-      getEventTypes(supabase, workspaceId).catch(() => []),
-    ])
+  const [
+    settings,
+    { data: connectionsData },
+    { data: imapConnectionsData },
+    autoAckEnabled,
+    lastSyncAt,
+    { data: membersData },
+    { data: usersData },
+    eventTypes,
+  ] = await Promise.all([
+    getMultipleSettings(workspaceId, SETTINGS_KEYS),
+    supabaseService
+      .from("gmail_connections")
+      .select("id, email, label")
+      .eq("workspace_id", workspaceId)
+      .order("created_at", { ascending: true }),
+    (supabaseService as any)
+      .from("imap_connections")
+      .select("id, email, label")
+      .eq("workspace_id", workspaceId)
+      .order("created_at", { ascending: true }),
+    getAutoAcknowledgmentEnabled(workspaceId),
+    getLastSyncAt(workspaceId),
+    supabaseService
+      .from("workspace_members")
+      .select("user_id")
+      .eq("workspace_id", workspaceId),
+    supabaseService.auth.admin.listUsers({ perPage: 100 }),
+    getEventTypes(supabase, workspaceId).catch(() => []),
+  ]);
 
-  const connections = ((connectionsData ?? []) as unknown) as {
-    id: string
-    email: string
-    label: string
-  }[]
+  const connections = (connectionsData ?? []) as unknown as {
+    id: string;
+    email: string;
+    label: string;
+  }[];
 
-  const imapConnections = ((imapConnectionsData ?? []) as unknown) as {
-    id: string
-    email: string
-    label: string
-  }[]
+  const imapConnections = (imapConnectionsData ?? []) as unknown as {
+    id: string;
+    email: string;
+    label: string;
+  }[];
 
-  const users = (usersData?.users ?? []).map((u) => ({
-    id: u.id,
-    email: u.email ?? "",
-    role: (u.user_metadata?.role as "admin" | "bureau" | "ouvrier" | undefined) ?? null,
-    created_at: u.created_at,
-  }))
+  const memberIds = new Set((membersData ?? []).map((m) => m.user_id));
+
+  const users = (usersData?.users ?? [])
+    .filter(
+      (u) =>
+        memberIds.has(u.id) && u.user_metadata?.role !== "super_admin"
+    )
+    .map((u) => ({
+      id: u.id,
+      email: u.email ?? "",
+      role:
+        (u.user_metadata?.role as "admin" | "bureau" | "ouvrier" | undefined) ??
+        null,
+      created_at: u.created_at,
+    }));
 
   return (
     <div className="space-y-6">
@@ -118,5 +139,5 @@ export default async function ParametresPage({
         eventTypes={eventTypes}
       />
     </div>
-  )
+  );
 }
