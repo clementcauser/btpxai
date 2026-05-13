@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -49,6 +49,7 @@ export function ProjectStatusBadge({
   initialStatus,
 }: ProjectStatusBadgeProps) {
   const router = useRouter()
+  const [, startTransition] = useTransition()
   const [status, setStatus] = useState<ProjectStatus>(initialStatus)
   const [isEditing, setIsEditing] = useState(false)
   const cfg = STATUS_CONFIG[status]
@@ -64,7 +65,7 @@ export function ProjectStatusBadge({
         body: JSON.stringify({ status: newStatus }),
       })
       if (!res.ok) throw new Error()
-      router.refresh()
+      startTransition(() => router.refresh())
       toast.success("Statut mis à jour")
     } catch {
       setStatus(prev)

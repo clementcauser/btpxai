@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -49,6 +49,7 @@ export function ProjectEditSheet({
   initialStatus,
 }: ProjectEditSheetProps) {
   const router = useRouter()
+  const [, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
 
   const form = useForm<EditProjectForm>({
@@ -70,7 +71,7 @@ export function ProjectEditSheet({
       if (!res.ok) throw new Error()
       toast.success("Projet mis à jour")
       setOpen(false)
-      router.refresh()
+      startTransition(() => router.refresh())
     } catch {
       toast.error("Erreur lors de la mise à jour")
     }

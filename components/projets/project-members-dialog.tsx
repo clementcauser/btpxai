@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Settings, Plus, Minus, Search } from "lucide-react"
@@ -36,6 +36,7 @@ export function ProjectMembersDialog({
   workspaceMembers,
 }: ProjectMembersDialogProps) {
   const router = useRouter()
+  const [, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
   const [memberIds, setMemberIds] = useState<Set<string>>(
@@ -49,7 +50,7 @@ export function ProjectMembersDialog({
       setMemberIds(new Set(members.map((m) => m.user_id)))
       setSearch("")
     } else {
-      router.refresh()
+      startTransition(() => router.refresh())
     }
   }
 
