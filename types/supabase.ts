@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -62,7 +67,7 @@ export type Database = {
           refreshToken?: string | null
           refreshTokenExpiresAt?: string | null
           scope?: string | null
-          updatedAt?: string
+          updatedAt: string
           userId: string
         }
         Update: {
@@ -100,8 +105,8 @@ export type Database = {
           photo_url: string | null
           project_id: string | null
           resolved_at: string | null
-          status: "ouvert" | "pris_en_charge" | "resolu"
-          urgency: "faible" | "elevee" | "critique"
+          status: string
+          urgency: string
           user_id: string
           workspace_id: string
         }
@@ -114,8 +119,8 @@ export type Database = {
           photo_url?: string | null
           project_id?: string | null
           resolved_at?: string | null
-          status?: "ouvert" | "pris_en_charge" | "resolu"
-          urgency: "faible" | "elevee" | "critique"
+          status?: string
+          urgency: string
           user_id: string
           workspace_id: string
         }
@@ -128,8 +133,8 @@ export type Database = {
           photo_url?: string | null
           project_id?: string | null
           resolved_at?: string | null
-          status?: "ouvert" | "pris_en_charge" | "resolu"
-          urgency?: "faible" | "elevee" | "critique"
+          status?: string
+          urgency?: string
           user_id?: string
           workspace_id?: string
         }
@@ -143,6 +148,115 @@ export type Database = {
           },
           {
             foreignKeyName: "alertes_terrain_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_event_assignees: {
+        Row: {
+          event_id: string
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_assignees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_event_types: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          is_preset: boolean
+          label: string
+          workspace_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_preset?: boolean
+          label: string
+          workspace_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_preset?: boolean
+          label?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_types_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_at: string
+          event_type_id: string | null
+          id: string
+          start_at: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at: string
+          event_type_id?: string | null
+          id?: string
+          start_at: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string
+          event_type_id?: string | null
+          id?: string
+          start_at?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_event_type_id_fkey"
+            columns: ["event_type_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_event_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -284,6 +398,7 @@ export type Database = {
           email: string
           expires_at: string
           id: string
+          label: string
           refresh_token: string
           updated_at: string
           workspace_id: string
@@ -294,6 +409,7 @@ export type Database = {
           email: string
           expires_at: string
           id?: string
+          label?: string
           refresh_token: string
           updated_at?: string
           workspace_id: string
@@ -304,6 +420,7 @@ export type Database = {
           email?: string
           expires_at?: string
           id?: string
+          label?: string
           refresh_token?: string
           updated_at?: string
           workspace_id?: string
@@ -311,6 +428,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "gmail_connections_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imap_connections: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          imap_host: string
+          imap_port: number
+          imap_secure: boolean
+          label: string
+          password_encrypted: string
+          smtp_host: string
+          smtp_port: number
+          smtp_secure: boolean
+          updated_at: string
+          username: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          imap_host: string
+          imap_port: number
+          imap_secure?: boolean
+          label?: string
+          password_encrypted: string
+          smtp_host: string
+          smtp_port: number
+          smtp_secure?: boolean
+          updated_at?: string
+          username: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          imap_host?: string
+          imap_port?: number
+          imap_secure?: boolean
+          label?: string
+          password_encrypted?: string
+          smtp_host?: string
+          smtp_port?: number
+          smtp_secure?: boolean
+          updated_at?: string
+          username?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imap_connections_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -327,8 +503,8 @@ export type Database = {
           photo_url: string | null
           project_id: string
           quantity: string
-          status: "pending" | "ordered" | "delivered"
-          urgency: "normal" | "urgent" | "critique"
+          status: string
+          urgency: string
           user_id: string
           workspace_id: string
         }
@@ -340,8 +516,8 @@ export type Database = {
           photo_url?: string | null
           project_id: string
           quantity: string
-          status?: "pending" | "ordered" | "delivered"
-          urgency: "normal" | "urgent" | "critique"
+          status?: string
+          urgency: string
           user_id: string
           workspace_id: string
         }
@@ -353,8 +529,8 @@ export type Database = {
           photo_url?: string | null
           project_id?: string
           quantity?: string
-          status?: "pending" | "ordered" | "delivered"
-          urgency?: "normal" | "urgent" | "critique"
+          status?: string
+          urgency?: string
           user_id?: string
           workspace_id?: string
         }
@@ -368,6 +544,52 @@ export type Database = {
           },
           {
             foreignKeyName: "materiaux_requests_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_members: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_members_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_members_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -631,7 +853,7 @@ export type Database = {
           impersonatedBy?: string | null
           ipAddress?: string | null
           token: string
-          updatedAt?: string
+          updatedAt: string
           userAgent?: string | null
           userId: string
         }
@@ -821,7 +1043,7 @@ export type Database = {
           banReason?: string | null
           createdAt?: string
           email: string
-          emailVerified?: boolean
+          emailVerified: boolean
           id: string
           image?: string | null
           name: string
@@ -845,27 +1067,27 @@ export type Database = {
       }
       verification: {
         Row: {
-          createdAt: string | null
+          createdAt: string
           expiresAt: string
           id: string
           identifier: string
-          updatedAt: string | null
+          updatedAt: string
           value: string
         }
         Insert: {
-          createdAt?: string | null
+          createdAt?: string
           expiresAt: string
           id: string
           identifier: string
-          updatedAt?: string | null
+          updatedAt?: string
           value: string
         }
         Update: {
-          createdAt?: string | null
+          createdAt?: string
           expiresAt?: string
           id?: string
           identifier?: string
-          updatedAt?: string | null
+          updatedAt?: string
           value?: string
         }
         Relationships: []
@@ -980,6 +1202,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          owner_id: string | null
           slug: string
           updated_at: string
         }
@@ -987,6 +1210,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          owner_id?: string | null
           slug: string
           updated_at?: string
         }
@@ -994,6 +1218,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          owner_id?: string | null
           slug?: string
           updated_at?: string
         }
@@ -1004,9 +1229,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_workspace_role: {
-        Args: { p_workspace_id: string }
-        Returns: string
+      get_workspace_role: { Args: { p_workspace_id: string }; Returns: string }
+      is_bureau_admin_for_event: {
+        Args: { p_event_id: string }
+        Returns: boolean
       }
       is_workspace_member: {
         Args: { p_workspace_id: string }

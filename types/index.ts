@@ -258,6 +258,65 @@ export type MateriauxRequest = {
 
 export type ProjectStep = Tables<"project_steps">
 
+// ─── Projets ──────────────────────────────────────────────────────────────────
+
+export type ProjectStatus = "planned" | "in_progress" | "completed" | "cancelled"
+
+export type TaskStatus = "todo" | "in_progress" | "done" | "blocked"
+
+export type WorkspaceMemberRole = "admin" | "bureau" | "ouvrier"
+
+export type UserSummary = {
+  id: string
+  name: string
+  email: string
+  image: string | null
+}
+
+export type WorkspaceMemberWithUser = {
+  id: string
+  user_id: string
+  workspace_id: string
+  role: WorkspaceMemberRole
+  created_at: string
+  user: UserSummary | null
+}
+
+export type ProjectMember = {
+  id: string
+  project_id: string
+  user_id: string
+  workspace_id: string
+  created_at: string
+  user: UserSummary | null
+}
+
+export type TaskWithAssignee = {
+  id: string
+  project_id: string
+  title: string
+  status: TaskStatus
+  assigned_to: string | null
+  due_date: string | null
+  workspace_id: string
+  assignee: UserSummary | null
+}
+
+export type ProjectForTable = Project & {
+  client: Pick<Client, "id" | "name"> | null
+  quotes: Pick<Quote, "id" | "total_ht" | "status">[]
+}
+
+export type ProjectWithDetails = Project & {
+  client: Client | null
+  quotes: (Quote & { items: QuoteItem[] })[]
+  tasks: TaskWithAssignee[]
+  project_steps: ProjectStep[]
+  project_members: ProjectMember[]
+  terrain_notes: TerrainNote[]
+  terrain_photos: TerrainPhoto[]
+}
+
 export type ProblemeUrgency = "faible" | "elevee" | "critique"
 
 export type AlerteStatus = "ouvert" | "pris_en_charge" | "resolu"

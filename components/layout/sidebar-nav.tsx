@@ -12,6 +12,7 @@ import {
   Package,
   AlertTriangle,
   CalendarDays,
+  FolderOpen,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -32,6 +33,7 @@ type NavItem = {
 const bureauNavBase: Omit<NavItem, "badge">[] = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/devis", label: "Devis", icon: FileText },
+  { href: "/projets", label: "Projets", icon: FolderOpen },
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/inbox", label: "Messagerie", icon: Mail },
   { href: "/materiaux", label: "Matériaux", icon: Package },
