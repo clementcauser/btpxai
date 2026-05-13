@@ -91,7 +91,11 @@ export function CalendarClient({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     })
-    if (!res.ok) throw new Error("Erreur lors de l'enregistrement")
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      console.error("[calendar] save failed", res.status, body)
+      throw new Error("Erreur lors de l'enregistrement")
+    }
     await refresh()
   }
 

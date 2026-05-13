@@ -27,9 +27,11 @@ function initials(email: string): string {
 export function SidebarUser({
   email,
   role,
+  collapsed = false,
 }: {
   email: string
   role: string
+  collapsed?: boolean
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -39,6 +41,28 @@ export function SidebarUser({
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push("/login")
+  }
+
+  if (collapsed) {
+    return (
+      <div className="border-t border-sidebar-border p-2 flex flex-col items-center gap-2">
+        <Avatar className="size-7 shrink-0">
+          <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
+            {initials(email)}
+          </AvatarFallback>
+        </Avatar>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/10"
+          onClick={handleSignOut}
+          disabled={loading}
+          title="Se déconnecter"
+        >
+          <LogOut className="size-3.5" />
+        </Button>
+      </div>
+    )
   }
 
   return (

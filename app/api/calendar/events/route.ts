@@ -53,6 +53,7 @@ export async function POST(req: Request) {
     const event = await createEvent(supabase, workspaceId, parsed.data)
     return NextResponse.json(event, { status: 201 })
   } catch (err) {
+    console.error("[calendar] POST error:", err)
     if (err instanceof WorkspaceError) {
       return NextResponse.json({ error: err.message }, { status: 403 })
     }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Menu, X } from "lucide-react"
+import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AppSidebar } from "./sidebar"
 
@@ -51,21 +51,16 @@ export function MobileHeader({
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="relative h-full">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-2 top-2 z-10 size-7 text-muted-foreground"
-            onClick={() => setOpen(false)}
-          >
-            <X className="size-4" />
-          </Button>
+        <div className="h-full">
           <AppSidebar
             email={email}
             role={role}
             alertBadge={alertBadge}
             workspaceName={workspaceName}
             logoUrl={logoUrl}
+            onToggle={() => setOpen(false)}
+            toggleLabel="Fermer"
+            variant="drawer"
           />
         </div>
       </div>
