@@ -17,7 +17,9 @@ import { createClient } from "@/lib/supabase/server"
 import { supabaseService } from "@/lib/supabase/service"
 import { getProjectWithDetails, computeProjectTotal } from "@/lib/projects"
 import { buttonVariants } from "@/components/ui/button"
-import { ProjectMembersManager } from "@/components/projets/project-members-manager"
+import { ProjectEditSheet } from "@/components/projets/project-edit-sheet"
+import { ProjectStatusBadge } from "@/components/projets/project-status-badge"
+import { ProjectMembersDialog } from "@/components/projets/project-members-dialog"
 import ProjectStepsManager from "@/components/bureau/project-steps-manager"
 import { cn } from "@/lib/utils"
 import type { QuoteStatus, ProjectStatus, TaskStatus, WorkspaceMemberWithUser } from "@/types"
@@ -246,15 +248,10 @@ export default async function ProjetDetailPage({
                 <span className="text-xs text-muted-foreground tracking-wider uppercase">
                   Projet
                 </span>
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                    cfg.className
-                  )}
-                >
-                  <span className={cn("size-1.5 rounded-full", cfg.dot)} />
-                  {cfg.label}
-                </span>
+                <ProjectStatusBadge
+                  projectId={project.id}
+                  initialStatus={project.status as ProjectStatus}
+                />
               </div>
 
               <h1 className="font-heading text-3xl sm:text-4xl font-700 tracking-wide uppercase text-foreground mb-3">
@@ -282,6 +279,12 @@ export default async function ProjetDetailPage({
                 </span>
               </div>
             </div>
+            <ProjectEditSheet
+              projectId={project.id}
+              initialTitle={project.title}
+              initialDescription={project.description ?? null}
+              initialStatus={project.status as ProjectStatus}
+            />
           </div>
 
           {/* Stats */}
@@ -327,12 +330,44 @@ export default async function ProjetDetailPage({
 
       {/* Members */}
       <section className="rounded-sm border border-border bg-card p-6">
-        <SectionHeader icon={Users} title="Membres" count={project.project_members.length} />
-        <ProjectMembersManager
-          projectId={project.id}
-          members={project.project_members}
-          workspaceMembers={workspaceMembers}
-        />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Users className="size-4 text-primary/70 shrink-0" />
+            <h2 className="font-heading text-base font-700 tracking-wide uppercase text-foreground">
+              Membres
+            </h2>
+            <span className="ml-1 text-xs text-muted-foreground tabular-nums">
+              ({project.project_members.length})
+            </span>
+          </div>
+          <ProjectMembersDialog
+            projectId={project.id}
+            members={project.project_members}
+            workspaceMembers={workspaceMembers}
+          />
+        </div>
+        {project.project_members.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Aucun membre assigné à ce projet.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {project.project_members.map((member) => {
+              const name = member.user?.name ?? "Utilisateur"
+              return (
+                <span
+                  key={member.id}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs bg-muted/40 border border-border text-muted-foreground"
+                >
+                  <span className="size-5 rounded-full bg-muted flex items-center justify-center text-[9px] font-medium">
+                    {userInitials(name)}
+                  </span>
+                  {name}
+                </span>
+              )
+            })}
+          </div>
+        )}
       </section>
 
       {/* Devis */}
