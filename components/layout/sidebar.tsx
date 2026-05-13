@@ -1,6 +1,8 @@
 import Image from "next/image"
 import { SidebarNav } from "./sidebar-nav"
 import { SidebarUser } from "./sidebar-user"
+import { SidebarToggle } from "./sidebar-toggle"
+import { cn } from "@/lib/utils"
 
 type Role = "admin" | "bureau" | "ouvrier"
 
@@ -10,20 +12,41 @@ export function AppSidebar({
   alertBadge = 0,
   workspaceName,
   logoUrl,
+  collapsed = false,
+  onToggle,
+  toggleLabel,
+  variant = "fixed",
 }: {
   email: string
   role: Role
   alertBadge?: number
   workspaceName?: string | null
   logoUrl?: string | null
+  collapsed?: boolean
+  onToggle?: () => void
+  toggleLabel?: string
+  variant?: "fixed" | "drawer"
 }) {
   const displayName = workspaceName ?? "BTPxAI"
   const initial = displayName.charAt(0).toUpperCase()
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 flex w-56 flex-col bg-sidebar border-r border-sidebar-border">
+    <aside
+      className={cn(
+        "flex flex-col bg-sidebar border-r border-sidebar-border",
+        variant === "fixed"
+          ? "fixed inset-y-0 left-0 z-40 transition-[width] duration-200 ease-in-out overflow-hidden"
+          : "h-full",
+        variant === "fixed" ? (collapsed ? "w-14" : "w-56") : "w-56"
+      )}
+    >
       {/* Brand */}
-      <div className="flex items-center gap-2 px-4 py-5 border-b border-sidebar-border">
+      <div
+        className={cn(
+          "flex items-center border-b border-sidebar-border shrink-0",
+          collapsed ? "justify-center px-0 py-5" : "gap-2 px-4 py-5"
+        )}
+      >
         {logoUrl ? (
           <div className="size-7 rounded-sm overflow-hidden shrink-0 border border-sidebar-border">
             <Image
@@ -41,16 +64,21 @@ export function AppSidebar({
             </span>
           </div>
         )}
-        <span className="font-heading font-700 text-base tracking-wide text-sidebar-foreground truncate">
-          {displayName}
-        </span>
+        {!collapsed && (
+          <span className="font-heading font-700 text-base tracking-wide text-sidebar-foreground truncate">
+            {displayName}
+          </span>
+        )}
       </div>
 
       {/* Navigation */}
-      <SidebarNav role={role} alertBadge={alertBadge} />
+      <SidebarNav role={role} alertBadge={alertBadge} collapsed={collapsed} />
+
+      {/* Toggle button — bas de la nav, avant le user */}
+      {onToggle && <SidebarToggle collapsed={collapsed} onToggle={onToggle} label={toggleLabel} />}
 
       {/* User section */}
-      <SidebarUser email={email} role={role} />
+      <SidebarUser email={email} role={role} collapsed={collapsed} />
     </aside>
   )
 }

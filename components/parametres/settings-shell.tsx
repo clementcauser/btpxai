@@ -12,6 +12,8 @@ import { SheetsSyncSection } from "./sheets-sync-section"
 import { GmailConnectionSection } from "./gmail-connection-section"
 import { ImapConnectionSection } from "./imap-connection-section"
 import { UsersSection } from "./users-section"
+import { EventTypesSection } from "./event-types-section"
+import type { CalendarEventType } from "@/types"
 
 type Tab = "entreprise" | "automatisations" | "integrations" | "equipe"
 
@@ -45,6 +47,7 @@ type Props = {
   autoAckEnabled: boolean
   lastSyncAt: string | null
   users: AdminUser[]
+  eventTypes: CalendarEventType[]
 }
 
 export function SettingsShell({
@@ -55,6 +58,7 @@ export function SettingsShell({
   autoAckEnabled,
   lastSyncAt,
   users,
+  eventTypes,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("entreprise")
 
@@ -106,6 +110,9 @@ export function SettingsShell({
                 }
               })()}
             />
+            <section className="rounded-lg border border-border p-6">
+              <EventTypesSection initialTypes={eventTypes} />
+            </section>
           </>
         )}
 
