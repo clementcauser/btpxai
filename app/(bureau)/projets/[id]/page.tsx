@@ -1,6 +1,6 @@
-import type { Metadata } from "next"
-import Link from "next/link"
-import { notFound } from "next/navigation"
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 import {
   ChevronLeft,
   FileText,
@@ -12,61 +12,33 @@ import {
   MapPin,
   Calendar,
   ClipboardList,
-} from "lucide-react"
-import { createClient } from "@/lib/supabase/server"
-import { supabaseService } from "@/lib/supabase/service"
-import { getProjectWithDetails, computeProjectTotal } from "@/lib/projects"
-import { buttonVariants } from "@/components/ui/button"
-import { ProjectEditSheet } from "@/components/projets/project-edit-sheet"
-import { ProjectStatusBadge } from "@/components/projets/project-status-badge"
-import { ProjectMembersDialog } from "@/components/projets/project-members-dialog"
-import ProjectStepsManager from "@/components/bureau/project-steps-manager"
-import { cn } from "@/lib/utils"
-import type { QuoteStatus, ProjectStatus, TaskStatus, WorkspaceMemberWithUser } from "@/types"
+} from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { supabaseService } from "@/lib/supabase/service";
+import { getProjectWithDetails, computeProjectTotal } from "@/lib/projects";
+import { PROJECT_STATUS_CONFIG } from "@/lib/project-status";
+import { buttonVariants } from "@/components/ui/button";
+import { ProjectEditSheet } from "@/components/projets/project-edit-sheet";
+import { ProjectStatusBadge } from "@/components/projets/project-status-badge";
+import { ProjectMembersDialog } from "@/components/projets/project-members-dialog";
+import { AddTasksDialog } from "@/components/projets/add-tasks-dialog";
+import ProjectStepsManager from "@/components/bureau/project-steps-manager";
+import { cn } from "@/lib/utils";
+import type { QuoteStatus, ProjectStatus, TaskStatus } from "@/types";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
-  const { id } = await params
-  const supabase = await createClient()
+  const { id } = await params;
+  const supabase = await createClient();
   try {
-    const project = await getProjectWithDetails(supabase, id)
-    return { title: `${project.title} — BTP×AI` }
+    const project = await getProjectWithDetails(supabase, id);
+    return { title: `${project.title} — BTP×AI` };
   } catch {
-    return { title: "Projet — BTP×AI" }
+    return { title: "Projet — BTP×AI" };
   }
-}
-
-const PROJECT_STATUS_CONFIG: Record<
-  ProjectStatus,
-  { label: string; className: string; dot: string; stripColor: string }
-> = {
-  planned: {
-    label: "Planifié",
-    className: "bg-slate-500/10 text-slate-400 border-slate-500/30",
-    dot: "bg-slate-400",
-    stripColor: "oklch(0.55 0.02 258)",
-  },
-  in_progress: {
-    label: "En cours",
-    className: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-    dot: "bg-amber-400",
-    stripColor: "oklch(0.69 0.168 47)",
-  },
-  completed: {
-    label: "Terminé",
-    className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-    dot: "bg-emerald-400",
-    stripColor: "oklch(0.6 0.15 150)",
-  },
-  cancelled: {
-    label: "Annulé",
-    className: "bg-red-500/10 text-red-400 border-red-500/30",
-    dot: "bg-red-400",
-    stripColor: "oklch(0.55 0.2 25)",
-  },
 }
 
 const QUOTE_STATUS_CONFIG: Record<
@@ -98,7 +70,7 @@ const QUOTE_STATUS_CONFIG: Record<
     className: "bg-slate-500/10 text-slate-500 border-slate-500/20",
     dot: "bg-slate-500",
   },
-}
+};
 
 const TASK_STATUS_CONFIG: Record<
   TaskStatus,
@@ -120,14 +92,14 @@ const TASK_STATUS_CONFIG: Record<
     label: "Bloqué",
     className: "bg-red-500/10 text-red-400 border-red-500/30",
   },
-}
+};
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  })
+  });
 }
 
 function formatAmount(ht: number) {
@@ -135,7 +107,7 @@ function formatAmount(ht: number) {
     style: "currency",
     currency: "EUR",
     maximumFractionDigits: 0,
-  }).format(ht)
+  }).format(ht);
 }
 
 function userInitials(name: string) {
@@ -143,7 +115,7 @@ function userInitials(name: string) {
     .split(/\s+/)
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("")
+    .join("");
 }
 
 function SectionHeader({
@@ -151,9 +123,9 @@ function SectionHeader({
   title,
   count,
 }: {
-  icon: React.ComponentType<{ className?: string }>
-  title: string
-  count?: number
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  count?: number;
 }) {
   return (
     <div className="flex items-center gap-2 mb-4">
@@ -167,30 +139,64 @@ function SectionHeader({
         </span>
       )}
     </div>
-  )
+  );
 }
 
 export default async function ProjetDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = await params
-  const supabase = await createClient()
-  const project = await getProjectWithDetails(supabase, id).catch(() => notFound())
-
+  const { id } = await params;
+  const supabase = await createClient();
+  const project = await getProjectWithDetails(supabase, id).catch(() =>
+    notFound()
+  );
   const { data: rawWorkspaceMembers } = await supabaseService
     .from("workspace_members")
-    .select("*, user:user(id, name, email, image)")
-    .eq("workspace_id", project.workspace_id)
+    .select("id, user_id, workspace_id, role, created_at")
+    .eq("workspace_id", project.workspace_id);
 
-  const workspaceMembers = (rawWorkspaceMembers ?? []) as WorkspaceMemberWithUser[]
+  const allUserIds = [
+    ...new Set([
+      ...(rawWorkspaceMembers ?? []).map((m) => m.user_id),
+      ...project.project_members.map((m) => m.user_id as string),
+    ]),
+  ];
 
-  const cfg = PROJECT_STATUS_CONFIG[project.status as ProjectStatus]
-  const totalHT = computeProjectTotal(project.quotes)
-  const acceptedQuotes = project.quotes.filter((q) => q.status === "accepted")
-  const totalAcceptedHT = acceptedQuotes.reduce((s, q) => s + (q.total_ht ?? 0), 0)
-  const doneTasks = project.tasks.filter((t) => t.status === "done").length
+  const authUsers = allUserIds.length
+    ? await Promise.all(
+        allUserIds.map((uid) =>
+          supabaseService.auth.admin.getUserById(uid).then(({ data }) => data?.user ?? null)
+        )
+      )
+    : [];
+
+  const usersById = Object.fromEntries(
+    authUsers.filter(Boolean).map((u) => [
+      u!.id,
+      { id: u!.id, name: u!.user_metadata?.name ?? u!.email ?? "", email: u!.email ?? "", image: u!.user_metadata?.image ?? null },
+    ])
+  );
+
+  const workspaceMembers = (rawWorkspaceMembers ?? []).map((m) => ({
+    ...m,
+    user: usersById[m.user_id] ?? null,
+  }));
+
+  const projectMembersWithUser = project.project_members.map((m) => ({
+    ...m,
+    user: usersById[m.user_id as string] ?? null,
+  }));
+
+  const cfg = PROJECT_STATUS_CONFIG[project.status as ProjectStatus];
+  const totalHT = computeProjectTotal(project.quotes);
+  const acceptedQuotes = project.quotes.filter((q) => q.status === "accepted");
+  const totalAcceptedHT = acceptedQuotes.reduce(
+    (s, q) => s + (q.total_ht ?? 0),
+    0
+  );
+  const doneTasks = project.tasks.filter((t) => t.status === "done").length;
 
   return (
     <div className="space-y-8">
@@ -321,7 +327,7 @@ export default async function ProjetDetailPage({
                 Membres
               </p>
               <p className="font-heading text-2xl font-700 text-foreground">
-                {project.project_members.length}
+                {projectMembersWithUser.length}
               </p>
             </div>
           </div>
@@ -337,23 +343,23 @@ export default async function ProjetDetailPage({
               Membres
             </h2>
             <span className="ml-1 text-xs text-muted-foreground tabular-nums">
-              ({project.project_members.length})
+              ({projectMembersWithUser.length})
             </span>
           </div>
           <ProjectMembersDialog
             projectId={project.id}
-            members={project.project_members}
+            members={projectMembersWithUser}
             workspaceMembers={workspaceMembers}
           />
         </div>
-        {project.project_members.length === 0 ? (
+        {projectMembersWithUser.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Aucun membre assigné à ce projet.
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {project.project_members.map((member) => {
-              const name = member.user?.name ?? "Utilisateur"
+            {projectMembersWithUser.map((member) => {
+              const name = member.user?.name ?? "Utilisateur";
               return (
                 <span
                   key={member.id}
@@ -364,7 +370,7 @@ export default async function ProjetDetailPage({
                   </span>
                   {name}
                 </span>
-              )
+              );
             })}
           </div>
         )}
@@ -372,9 +378,15 @@ export default async function ProjetDetailPage({
 
       {/* Devis */}
       <section className="rounded-sm border border-border bg-card p-6">
-        <SectionHeader icon={FileText} title="Devis" count={project.quotes.length} />
+        <SectionHeader
+          icon={FileText}
+          title="Devis"
+          count={project.quotes.length}
+        />
         {project.quotes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucun devis pour ce projet.</p>
+          <p className="text-sm text-muted-foreground">
+            Aucun devis pour ce projet.
+          </p>
         ) : (
           <div className="rounded-sm border border-border overflow-hidden">
             <table className="w-full text-sm">
@@ -397,11 +409,13 @@ export default async function ProjetDetailPage({
               </thead>
               <tbody className="divide-y divide-border/60">
                 {project.quotes.map((quote) => {
-                  const qcfg = QUOTE_STATUS_CONFIG[quote.status as QuoteStatus]
+                  const qcfg = QUOTE_STATUS_CONFIG[quote.status as QuoteStatus];
                   return (
                     <tr key={quote.id} className="group">
                       <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                        {quote.reference ?? <span className="opacity-40">—</span>}
+                        {quote.reference ?? (
+                          <span className="opacity-40">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
                         {formatDate(quote.created_at)}
@@ -413,12 +427,16 @@ export default async function ProjetDetailPage({
                             qcfg.className
                           )}
                         >
-                          <span className={cn("size-1.5 rounded-full", qcfg.dot)} />
+                          <span
+                            className={cn("size-1.5 rounded-full", qcfg.dot)}
+                          />
                           {qcfg.label}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-sm">
-                        {quote.total_ht != null ? formatAmount(quote.total_ht) : "—"}
+                        {quote.total_ht != null
+                          ? formatAmount(quote.total_ht)
+                          : "—"}
                       </td>
                       <td className="pr-3 py-3">
                         <Link
@@ -430,7 +448,7 @@ export default async function ProjetDetailPage({
                         </Link>
                       </td>
                     </tr>
-                  )
+                  );
                 })}
               </tbody>
               {project.quotes.length > 1 && totalHT > 0 && (
@@ -463,13 +481,26 @@ export default async function ProjetDetailPage({
 
       {/* Tasks */}
       <section className="rounded-sm border border-border bg-card p-6">
-        <SectionHeader icon={CheckSquare} title="Tâches" count={project.tasks.length} />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <CheckSquare className="size-4 text-primary/70 shrink-0" />
+            <h2 className="font-heading text-base font-700 tracking-wide uppercase text-foreground">
+              Tâches
+            </h2>
+            <span className="ml-1 text-xs text-muted-foreground tabular-nums">
+              ({project.tasks.length})
+            </span>
+          </div>
+          <AddTasksDialog projectId={project.id} />
+        </div>
         {project.tasks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucune tâche pour ce projet.</p>
+          <p className="text-sm text-muted-foreground">
+            Aucune tâche pour ce projet.
+          </p>
         ) : (
           <div className="space-y-2">
             {project.tasks.map((task) => {
-              const tcfg = TASK_STATUS_CONFIG[task.status as TaskStatus]
+              const tcfg = TASK_STATUS_CONFIG[task.status as TaskStatus];
               return (
                 <div
                   key={task.id}
@@ -479,7 +510,8 @@ export default async function ProjetDetailPage({
                     <span
                       className={cn(
                         "text-foreground",
-                        task.status === "done" && "line-through text-muted-foreground"
+                        task.status === "done" &&
+                          "line-through text-muted-foreground"
                       )}
                     >
                       {task.title}
@@ -510,7 +542,7 @@ export default async function ProjetDetailPage({
                     {tcfg.label}
                   </span>
                 </div>
-              )
+              );
             })}
           </div>
         )}
@@ -523,11 +555,7 @@ export default async function ProjetDetailPage({
           title="Étapes"
           count={project.project_steps.length}
         />
-        <ProjectStepsManager
-          projectId={project.id}
-          workspaceId={project.workspace_id}
-          initialSteps={project.project_steps}
-        />
+        <ProjectStepsManager projectId={project.id} />
       </section>
 
       {/* Terrain Notes */}
@@ -547,7 +575,9 @@ export default async function ProjetDetailPage({
                 <Mic className="size-4 text-primary/60 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   {note.transcription ? (
-                    <p className="text-sm text-foreground">{note.transcription}</p>
+                    <p className="text-sm text-foreground">
+                      {note.transcription}
+                    </p>
                   ) : (
                     <p className="text-sm text-muted-foreground italic">
                       Note audio sans transcription
@@ -597,5 +627,5 @@ export default async function ProjetDetailPage({
         </section>
       )}
     </div>
-  )
+  );
 }
