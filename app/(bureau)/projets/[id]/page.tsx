@@ -22,9 +22,11 @@ import { ProjectEditSheet } from "@/components/projets/project-edit-sheet";
 import { ProjectStatusBadge } from "@/components/projets/project-status-badge";
 import { ProjectMembersDialog } from "@/components/projets/project-members-dialog";
 import { AddTasksDialog } from "@/components/projets/add-tasks-dialog";
+import { TaskItem } from "@/components/projets/task-item";
+import { UserChip } from "@/components/projets/user-chip";
 import ProjectStepsManager from "@/components/bureau/project-steps-manager";
 import { cn } from "@/lib/utils";
-import type { QuoteStatus, ProjectStatus, TaskStatus } from "@/types";
+import type { QuoteStatus, ProjectStatus } from "@/types";
 
 export async function generateMetadata({
   params,
@@ -72,27 +74,6 @@ const QUOTE_STATUS_CONFIG: Record<
   },
 };
 
-const TASK_STATUS_CONFIG: Record<
-  TaskStatus,
-  { label: string; className: string }
-> = {
-  todo: {
-    label: "À faire",
-    className: "bg-muted/60 text-muted-foreground border-border/80",
-  },
-  in_progress: {
-    label: "En cours",
-    className: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-  },
-  done: {
-    label: "Terminé",
-    className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-  },
-  blocked: {
-    label: "Bloqué",
-    className: "bg-red-500/10 text-red-400 border-red-500/30",
-  },
-};
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("fr-FR", {
@@ -110,13 +91,6 @@ function formatAmount(ht: number) {
   }).format(ht);
 }
 
-function userInitials(name: string) {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-}
 
 function SectionHeader({
   icon: Icon,
@@ -196,7 +170,12 @@ export default async function ProjetDetailPage({
     (s, q) => s + (q.total_ht ?? 0),
     0
   );
-  const doneTasks = project.tasks.filter((t) => t.status === "done").length;
+  const tasksWithAssignees = project.tasks.map((task) => ({
+    ...task,
+    assignee: task.assigned_to ? (usersById[task.assigned_to] ?? null) : null,
+  }));
+
+  const doneTasks = tasksWithAssignees.filter((t) => t.status === "done").length;
 
   return (
     <div className="space-y-8">
@@ -318,7 +297,7 @@ export default async function ProjetDetailPage({
               <p className="font-heading text-2xl font-700 text-foreground">
                 {doneTasks}
                 <span className="text-muted-foreground text-base font-normal">
-                  /{project.tasks.length}
+                  /{tasksWithAssignees.length}
                 </span>
               </p>
             </div>
@@ -358,20 +337,12 @@ export default async function ProjetDetailPage({
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {projectMembersWithUser.map((member) => {
-              const name = member.user?.name ?? "Utilisateur";
-              return (
-                <span
-                  key={member.id}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs bg-muted/40 border border-border text-muted-foreground"
-                >
-                  <span className="size-5 rounded-full bg-muted flex items-center justify-center text-[9px] font-medium">
-                    {userInitials(name)}
-                  </span>
-                  {name}
-                </span>
-              );
-            })}
+            {projectMembersWithUser.map((member) => (
+              <UserChip
+                key={member.id}
+                name={member.user?.name ?? "Utilisateur"}
+              />
+            ))}
           </div>
         )}
       </section>
@@ -488,62 +459,32 @@ export default async function ProjetDetailPage({
               Tâches
             </h2>
             <span className="ml-1 text-xs text-muted-foreground tabular-nums">
-              ({project.tasks.length})
+              ({tasksWithAssignees.length})
             </span>
           </div>
-          <AddTasksDialog projectId={project.id} />
+          <AddTasksDialog
+            projectId={project.id}
+            members={projectMembersWithUser
+              .filter((m) => m.user !== null)
+              .map((m) => ({ id: m.user_id as string, name: m.user!.name }))}
+          />
         </div>
-        {project.tasks.length === 0 ? (
+        {tasksWithAssignees.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Aucune tâche pour ce projet.
           </p>
         ) : (
           <div className="space-y-2">
-            {project.tasks.map((task) => {
-              const tcfg = TASK_STATUS_CONFIG[task.status as TaskStatus];
-              return (
-                <div
-                  key={task.id}
-                  className="flex items-center gap-3 px-4 py-3 rounded-sm border border-border bg-muted/10 text-sm"
-                >
-                  <div className="flex-1 min-w-0">
-                    <span
-                      className={cn(
-                        "text-foreground",
-                        task.status === "done" &&
-                          "line-through text-muted-foreground"
-                      )}
-                    >
-                      {task.title}
-                    </span>
-                    {task.due_date && (
-                      <span className="ml-3 text-xs text-muted-foreground">
-                        <Calendar className="size-3 inline mr-1 -mt-0.5" />
-                        {formatDate(task.due_date)}
-                      </span>
-                    )}
-                  </div>
-                  {task.assignee && (
-                    <div
-                      className="size-6 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0"
-                      title={task.assignee.name}
-                    >
-                      <span className="text-primary font-medium text-[10px] leading-none">
-                        {userInitials(task.assignee.name)}
-                      </span>
-                    </div>
-                  )}
-                  <span
-                    className={cn(
-                      "shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border",
-                      tcfg.className
-                    )}
-                  >
-                    {tcfg.label}
-                  </span>
-                </div>
-              );
-            })}
+            {tasksWithAssignees.map((task) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                projectId={project.id}
+                members={projectMembersWithUser
+                  .filter((m) => m.user !== null)
+                  .map((m) => ({ id: m.user_id as string, name: m.user!.name }))}
+              />
+            ))}
           </div>
         )}
       </section>

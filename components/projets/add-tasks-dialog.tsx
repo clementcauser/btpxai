@@ -13,17 +13,37 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface Member {
+  id: string;
+  name: string;
+}
+
+interface TaskRow {
+  id: number;
+  value: string;
+  assignedTo: string | null;
+  dueDate: string;
+}
 
 interface AddTasksDialogProps {
   projectId: string;
+  members?: Member[];
 }
 
-export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
+export function AddTasksDialog({ projectId, members = [] }: AddTasksDialogProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const nextId = useRef(1);
-  const [tasks, setTasks] = useState<{ id: number; value: string }[]>([{ id: 0, value: "" }]);
+  const [tasks, setTasks] = useState<TaskRow[]>([{ id: 0, value: "", assignedTo: null, dueDate: "" }]);
   const [isPending, setIsPending] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -31,7 +51,7 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
     if (open) {
       nextId.current = 1;
       inputRefs.current = [];
-      setTasks([{ id: 0, value: "" }]);
+      setTasks([{ id: 0, value: "", assignedTo: null, dueDate: "" }]);
     }
   }, [open]);
 
@@ -42,7 +62,7 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
   }, [tasks.length, open]);
 
   function addLine() {
-    setTasks((prev) => [...prev, { id: nextId.current++, value: "" }]);
+    setTasks((prev) => [...prev, { id: nextId.current++, value: "", assignedTo: null, dueDate: "" }]);
   }
 
   function removeLine(index: number) {
@@ -50,8 +70,10 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
     setTasks((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function updateLine(index: number, value: string) {
-    setTasks((prev) => prev.map((t, i) => (i === index ? { ...t, value } : t)));
+  function updateLine(index: number, field: keyof TaskRow, value: string | null) {
+    setTasks((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, [field]: value } : t))
+    );
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>, index: number) {
@@ -65,23 +87,28 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
     }
   }
 
-  const nonEmptyTitles = tasks.map((t) => t.value.trim()).filter((v) => v.length > 0);
-  const canSubmit = nonEmptyTitles.length > 0 && !isPending;
+  const nonEmptyTasks = tasks.filter((t) => t.value.trim().length > 0);
+  const canSubmit = nonEmptyTasks.length > 0 && !isPending;
 
   async function handleSubmit() {
     if (!canSubmit) return;
     setIsPending(true);
     try {
+      const payload = nonEmptyTasks.map((t) => ({
+        title: t.value.trim(),
+        assignedTo: t.assignedTo ?? undefined,
+        dueDate: t.dueDate || undefined,
+      }));
       const res = await fetch(`/api/projets/${projectId}/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ titles: nonEmptyTitles }),
+        body: JSON.stringify({ tasks: payload }),
       });
       if (!res.ok) throw new Error();
       toast.success(
-        nonEmptyTitles.length === 1
+        nonEmptyTasks.length === 1
           ? "Tâche ajoutée"
-          : `${nonEmptyTitles.length} tâches ajoutées`
+          : `${nonEmptyTasks.length} tâches ajoutées`
       );
       setOpen(false);
       startTransition(() => router.refresh());
@@ -102,35 +129,68 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
         <Plus className="size-3.5" />
         Ajouter
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Ajouter des tâches</DialogTitle>
         </DialogHeader>
-        <div className="mt-2 space-y-2">
+        <div className="mt-2 space-y-3">
           {tasks.map((task, index) => (
-            <div key={task.id} className="flex items-center gap-2">
-              <Input
-                ref={(el) => { inputRefs.current[index] = el; }}
-                value={task.value}
-                onChange={(e) => updateLine(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, index)}
-                placeholder={`Tâche ${index + 1}`}
-                className="flex-1"
-                disabled={isPending}
-              />
-              {tasks.length > 1 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label={`Supprimer la tâche ${index + 1}`}
-                  className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
-                  onClick={() => removeLine(index)}
+            <div key={task.id} className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Input
+                  ref={(el) => { inputRefs.current[index] = el; }}
+                  value={task.value}
+                  onChange={(e) => updateLine(index, "value", e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, index)}
+                  placeholder={`Tâche ${index + 1}`}
+                  className="flex-1"
                   disabled={isPending}
-                  tabIndex={-1}
-                >
-                  <X className="size-3.5" />
-                </Button>
-              )}
+                />
+                {tasks.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Supprimer la tâche ${index + 1}`}
+                    className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeLine(index)}
+                    disabled={isPending}
+                    tabIndex={-1}
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 pl-0">
+                {members.length > 0 && (
+                  <Select
+                    value={task.assignedTo ?? "none"}
+                    onValueChange={(v) => updateLine(index, "assignedTo", v === "none" ? null : v)}
+                    disabled={isPending}
+                  >
+                    <SelectTrigger className="h-7 text-xs w-40 text-muted-foreground">
+                      <SelectValue placeholder="Responsable" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none" className="text-xs text-muted-foreground">
+                        Sans responsable
+                      </SelectItem>
+                      {members.map((m) => (
+                        <SelectItem key={m.id} value={m.id} className="text-xs">
+                          {m.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Input
+                  type="datetime-local"
+                  value={task.dueDate}
+                  onChange={(e) => updateLine(index, "dueDate", e.target.value)}
+                  disabled={isPending}
+                  className="h-7 text-xs w-48 text-muted-foreground"
+                />
+              </div>
             </div>
           ))}
 
@@ -162,7 +222,7 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
           >
             {isPending
               ? "Ajout en cours…"
-              : `Ajouter${nonEmptyTitles.length > 0 ? ` (${nonEmptyTitles.length})` : ""}`}
+              : `Ajouter${nonEmptyTasks.length > 0 ? ` (${nonEmptyTasks.length})` : ""}`}
           </Button>
         </div>
       </DialogContent>

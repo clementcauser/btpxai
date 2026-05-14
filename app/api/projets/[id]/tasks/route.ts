@@ -5,8 +5,14 @@ import { supabaseService } from "@/lib/supabase/service"
 import { requireWorkspace, WorkspaceError } from "@/lib/workspaces"
 
 const PostTasksSchema = z.object({
-  titles: z
-    .array(z.string().min(1).max(500))
+  tasks: z
+    .array(
+      z.object({
+        title: z.string().min(1).max(500),
+        assignedTo: z.string().uuid().optional(),
+        dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/).optional(),
+      })
+    )
     .min(1, "Au moins une tâche requise")
     .max(50, "Maximum 50 tâches par envoi"),
 })
@@ -36,12 +42,10 @@ export async function POST(
 
   const { id: projectId } = await params
 
-  // Validate projectId as UUID (fix 2)
   if (!z.string().uuid().safeParse(projectId).success) {
     return NextResponse.json({ error: "Identifiant de projet invalide" }, { status: 400 })
   }
 
-  // Verify project belongs to workspace (fix 1)
   const { data: project, error: projectError } = await supabaseService
     .from("projects")
     .select("id")
@@ -68,11 +72,13 @@ export async function POST(
     )
   }
 
-  const rows = result.data.titles.map((title) => ({
+  const rows = result.data.tasks.map(({ title, assignedTo, dueDate }) => ({
     project_id: projectId,
     workspace_id: workspaceId,
     title,
     status: "todo" as const,
+    ...(assignedTo ? { assigned_to: assignedTo } : {}),
+    ...(dueDate ? { due_date: dueDate } : {}),
   }))
 
   const { data, error } = await supabaseService
