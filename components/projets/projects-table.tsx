@@ -242,6 +242,9 @@ export function ProjectsTable({ projects }: Props) {
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground tracking-wider uppercase hidden sm:table-cell">
                   Client
                 </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground tracking-wider uppercase hidden sm:table-cell">
+                  Tâches
+                </th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground tracking-wider uppercase">
                   Statut
                 </th>
@@ -283,6 +286,17 @@ export function ProjectsTable({ projects }: Props) {
                     <td className="px-4 py-3.5 text-muted-foreground hidden sm:table-cell">
                       {project.client?.name ?? (
                         <span className="italic opacity-50">Sans client</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 hidden sm:table-cell">
+                      {project.tasks.length === 0 ? (
+                        <span className="text-muted-foreground/50 text-xs">—</span>
+                      ) : (
+                        <span className="tabular-nums text-sm text-muted-foreground">
+                          {project.tasks.filter((t) => t.status !== "done").length}
+                          <span className="text-muted-foreground/40">/</span>
+                          {project.tasks.length}
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3.5">

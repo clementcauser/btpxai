@@ -12,7 +12,7 @@ export async function getProjectsForTable(
 ): Promise<ProjectForTable[]> {
   const { data, error } = await supabase
     .from("projects")
-    .select("*, client:clients(id, name), quotes(id, total_ht, status)")
+    .select("*, client:clients(id, name), quotes(id, total_ht, status), tasks(id, status)")
     .order("created_at", { ascending: false })
 
   if (error) throw error

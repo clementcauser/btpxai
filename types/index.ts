@@ -305,6 +305,7 @@ export type TaskWithAssignee = {
 export type ProjectForTable = Project & {
   client: Pick<Client, "id" | "name"> | null
   quotes: Pick<Quote, "id" | "total_ht" | "status">[]
+  tasks: { id: string; status: TaskStatus }[]
 }
 
 export type ProjectWithDetails = Project & {
