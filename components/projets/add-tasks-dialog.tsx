@@ -22,24 +22,25 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
-  const [tasks, setTasks] = useState<string[]>([""]);
+  const nextId = useRef(1);
+  const [tasks, setTasks] = useState<{ id: number; value: string }[]>([{ id: 0, value: "" }]);
   const [isPending, setIsPending] = useState(false);
-  const lastInputRef = useRef<HTMLInputElement>(null);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (open) {
-      setTasks([""]);
+      setTasks([{ id: 0, value: "" }]);
     }
   }, [open]);
 
   useEffect(() => {
     if (open) {
-      lastInputRef.current?.focus();
+      inputRefs.current[tasks.length - 1]?.focus();
     }
   }, [tasks.length, open]);
 
   function addLine() {
-    setTasks((prev) => [...prev, ""]);
+    setTasks((prev) => [...prev, { id: nextId.current++, value: "" }]);
   }
 
   function removeLine(index: number) {
@@ -47,7 +48,7 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
   }
 
   function updateLine(index: number, value: string) {
-    setTasks((prev) => prev.map((t, i) => (i === index ? value : t)));
+    setTasks((prev) => prev.map((t, i) => (i === index ? { ...t, value } : t)));
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>, index: number) {
@@ -56,15 +57,12 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
       if (index === tasks.length - 1) {
         addLine();
       } else {
-        const inputs = document.querySelectorAll<HTMLInputElement>(
-          "[data-task-input]"
-        );
-        inputs[index + 1]?.focus();
+        inputRefs.current[index + 1]?.focus();
       }
     }
   }
 
-  const nonEmptyTitles = tasks.filter((t) => t.trim().length > 0);
+  const nonEmptyTitles = tasks.map((t) => t.value.trim()).filter((v) => v.length > 0);
   const canSubmit = nonEmptyTitles.length > 0 && !isPending;
 
   async function handleSubmit() {
@@ -107,11 +105,10 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
         </DialogHeader>
         <div className="mt-2 space-y-2">
           {tasks.map((task, index) => (
-            <div key={index} className="flex items-center gap-2">
+            <div key={task.id} className="flex items-center gap-2">
               <Input
-                ref={index === tasks.length - 1 ? lastInputRef : undefined}
-                data-task-input
-                value={task}
+                ref={(el) => { inputRefs.current[index] = el; }}
+                value={task.value}
                 onChange={(e) => updateLine(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(e, index)}
                 placeholder={`Tâche ${index + 1}`}
@@ -122,6 +119,7 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label={`Supprimer la tâche ${index + 1}`}
                   className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
                   onClick={() => removeLine(index)}
                   disabled={isPending}
@@ -157,6 +155,7 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
             size="sm"
             onClick={handleSubmit}
             disabled={!canSubmit}
+            aria-busy={isPending}
           >
             {isPending
               ? "Ajout en cours…"
