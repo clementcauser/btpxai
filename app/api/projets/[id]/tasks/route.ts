@@ -21,7 +21,7 @@ export async function POST(
   }
 
   const role = getUserRole(user)
-  if (role === "ouvrier") {
+  if (!["admin", "bureau", "super_admin"].includes(role ?? "")) {
     return NextResponse.json({ error: "Accès refusé" }, { status: 403 })
   }
 

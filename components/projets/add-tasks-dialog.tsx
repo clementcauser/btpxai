@@ -29,6 +29,8 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
 
   useEffect(() => {
     if (open) {
+      nextId.current = 1;
+      inputRefs.current = [];
       setTasks([{ id: 0, value: "" }]);
     }
   }, [open]);
@@ -44,6 +46,7 @@ export function AddTasksDialog({ projectId }: AddTasksDialogProps) {
   }
 
   function removeLine(index: number) {
+    inputRefs.current.splice(index, 1);
     setTasks((prev) => prev.filter((_, i) => i !== index));
   }
 
