@@ -42,8 +42,6 @@ export default async function BureauLayout({
       .eq("id", workspaceId)
       .single();
 
-    console.log({ ws });
-
     workspaceName = ws?.name ?? null;
     const logoSetting = (
       ws?.workspace_settings as { key: string; value: string }[] | null

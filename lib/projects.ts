@@ -39,7 +39,7 @@ export async function getProjectWithDetails(
       .then(({ data }) => data ?? []),
     supabase
       .from("project_members")
-      .select("*, user:user(id, name, email, image)")
+      .select("*")
       .eq("project_id", id)
       .then(({ data }) => data ?? []),
     supabase
