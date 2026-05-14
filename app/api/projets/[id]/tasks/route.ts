@@ -36,6 +36,23 @@ export async function POST(
 
   const { id: projectId } = await params
 
+  // Validate projectId as UUID (fix 2)
+  if (!z.string().uuid().safeParse(projectId).success) {
+    return NextResponse.json({ error: "Identifiant de projet invalide" }, { status: 400 })
+  }
+
+  // Verify project belongs to workspace (fix 1)
+  const { data: project, error: projectError } = await supabaseService
+    .from("projects")
+    .select("id")
+    .eq("id", projectId)
+    .eq("workspace_id", workspaceId)
+    .single()
+
+  if (projectError || !project) {
+    return NextResponse.json({ error: "Projet introuvable" }, { status: 404 })
+  }
+
   let body: unknown
   try {
     body = await req.json()
@@ -64,7 +81,7 @@ export async function POST(
     .select()
 
   if (error) {
-    console.error("Error inserting tasks:", error)
+    console.error("Error inserting tasks", { projectId, workspaceId, error })
     return NextResponse.json(
       { error: "Erreur lors de la création des tâches" },
       { status: 500 }
